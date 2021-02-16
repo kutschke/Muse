@@ -1,2 +1,2 @@
 # Muse
-Code build system to be used to build multiple repos together
+Code build system that can build multiple repos together
