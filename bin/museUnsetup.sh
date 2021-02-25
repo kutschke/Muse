@@ -1,0 +1,19 @@
+
+unset MUSE_WORK_DIR
+unset MUSE_DIR
+unset MUSE_ENVSET_DIR
+unset MUSE_VERBOSE
+unset MUSE_OPTS
+unset MUSE_STUB
+unset MUSE_FLAVOR
+unset MUSE_SETUP_PATH
+
+unset MUSE_BUILD
+unset MUSE_COMPILER_E
+unset MUSE_PYTHON
+unset MUSE_G4VIS
+unset MUSE_G4ST
+unset MUSE_G4VG
+unset MUSE_TRIGGER
+unset MUSE_ENVSET
+unset MUSE_ART

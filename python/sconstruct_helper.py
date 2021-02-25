@@ -1,0 +1,282 @@
+#
+# Define some helper functions which provide text such as build options
+# and library lists to be used in SConstruct.  Also there are a few functions
+# that perform little tasks - put here to keep SConstruct more readable.
+#
+
+from glob import glob
+import os, re, string
+
+import sys
+import subprocess
+
+# Check that some of the required environment variables have been set
+# and derive and check other pieces of the environment
+# return a dictionary with mu2eOpts
+def mu2eEnvironment():
+    mu2eOpts = {}
+#    if 'MU2E_BASE_RELEASE' not in os.environ:
+#        raise Exception('You have not specified MU2E_BASE_RELEASE for this build')
+#    primaryBase = os.environ['MU2E_BASE_RELEASE']
+#    mu2eOpts["primaryBase"] = primaryBase
+    buildBase = 'build/'+os.environ['MUSE_STUB']
+
+#    if "MU2E_SATELLITE_RELEASE" in os.environ:
+#        mu2eOpts["satellite"] = True
+#        mu2eOpts["satelliteBase"] = os.environ["MU2E_SATELLITE_RELEASE"]
+#        base = mu2eOpts["satelliteBase"]
+#    else:
+#        mu2eOpts["satellite"] = False
+#        base = mu2eOpts["primaryBase"]
+
+# the directory that includes local repos
+    workDir = os.environ['MUSE_WORK_DIR']
+
+#    # workDir is the local Offline area where output is written
+    mu2eOpts['workDir'] = workDir
+    mu2eOpts['buildBase'] = buildBase
+    mu2eOpts['libdir'] = buildBase+'/lib'
+    mu2eOpts['bindir'] = buildBase+'/bin'
+    mu2eOpts['gendir'] = buildBase+'/gen'
+
+    mu2eOpts['repos'] = os.environ['MUSE_REPOS']
+
+    # prof or debug
+    mu2eOpts['build'] = os.environ['MUSE_BUILD']
+    if len(os.environ['MUSE_G4VIS'])>0:
+        mu2eOpts['g4vis'] = os.environ['MUSE_G4VIS']
+    else:
+        mu2eOpts['g4vis'] = 'none'
+
+    if len(os.environ['MUSE_G4ST'])>0:
+        mu2eOpts['g4mt'] = 'off'
+    else:
+        mu2eOpts['g4mt'] = 'on'
+
+    if len(os.environ['MUSE_G4VG'])>0:
+        mu2eOpts['g4vg'] = 'on'
+    else:
+        mu2eOpts['g4vg'] = 'off'
+
+    if len(os.environ['MUSE_TRIGGER'])>0:
+        mu2eOpts['trigger'] = 'on'
+    else:
+        mu2eOpts['trigger'] = 'off'
+
+#    envopts = os.environ['MU2E_SETUP_BUILDOPTS'].strip()
+#    fsopts  = subprocess.check_output(primaryBase+"/buildopts",shell=True).strip().decode() # decode to convert byte string to text
+#    if envopts != fsopts:
+#        raise Exception("ERROR: Inconsistent build options: (MU2E_SETUP_BUILDOPTS vs ./buildopts)\n"
+#             +"Please source setup.sh after setting new options with buildopts.\n")
+#
+#    # copy the buildopts to the dictionary
+#    mu2eOpts["buildopts"] = fsopts
+#    for line in fsopts.split():
+#        pp = line.split("=")
+#        mu2eOpts[pp[0]] = pp[1]  # e.g.  mu2eOpts["build"] = "prof"
+
+
+    return mu2eOpts
+
+# the list of root libraries
+# This comes from: root-config --cflags --glibs
+def rootLibs():
+    return [ 'GenVector', 'Core', 'RIO', 'Net', 'Hist', 'MLP', 'Graf', 'Graf3d', 'Gpad', 'Tree',
+             'Rint', 'Postscript', 'Matrix', 'Physics', 'MathCore', 'Thread', 'Gui', 'm', 'dl' ]
+
+
+# the include path
+def cppPath(mu2eOpts):
+#    temp = mu2eOpts["primaryBase"].replace("/Offline","")
+    path = []
+    for repo in mu2eOpts['repos'].split():
+        path.append(mu2eOpts["workDir"]+'/'+repo)
+    path.append(mu2eOpts["workDir"])
+#    temp = mu2eOpts["primaryBase"]
+    path = path + [
+        os.environ['ART_INC'],
+        os.environ['ART_ROOT_IO_INC'],
+        os.environ['CANVAS_INC'],
+        os.environ['BTRK_INC'],
+        os.environ['MESSAGEFACILITY_INC'],
+        os.environ['FHICLCPP_INC'],
+        os.environ['HEP_CONCURRENCY_INC'],
+        os.environ['SQLITE_INC'],
+        os.environ['CETLIB_INC'],
+        os.environ['CETLIB_EXCEPT_INC'],
+        os.environ['BOOST_INC'],
+        os.environ['CLHEP_INC'],
+        os.environ['CPPUNIT_DIR']+'/include',
+        os.environ['HEPPDT_INC'],
+        os.environ['ROOT_INC'],
+        os.environ['XERCES_C_INC'],
+        os.environ['TBB_INC'],
+        os.environ['MU2E_ARTDAQ_CORE_INC'],
+        os.environ['ARTDAQ_CORE_INC'],
+        os.environ['PCIE_LINUX_KERNEL_MODULE_INC'],
+        os.environ['TRACE_INC'],
+        os.environ['GSL_INC'],
+        os.environ['POSTGRESQL_INC']
+        ]
+
+#    if mu2eOpts['satellite']:
+#        temp = mu2eOpts["satelliteBase"].replace("/Offline","")
+#        path = [ mu2eOpts['satelliteBase'] ] + path
+
+    return path
+
+# the ld_link_library path
+def libPath(mu2eOpts):
+    path = []
+    for repo in mu2eOpts['repos'].split():
+        print('DEBUG 30',repo, '#/'+mu2eOpts["buildBase"]+'/'+repo+'/lib')
+        path.append('#/'+mu2eOpts["buildBase"]+'/'+repo+'/lib')
+
+    path = path + [
+#        mu2eOpts['primaryBase']+'/lib',
+        os.environ['ART_LIB'],
+        os.environ['ART_ROOT_IO_LIB'],
+        os.environ['CANVAS_LIB'],
+        os.environ['BTRK_LIB'],
+        os.environ['MU2E_ARTDAQ_CORE_LIB'],
+        os.environ['ARTDAQ_CORE_LIB'],
+        os.environ['PCIE_LINUX_KERNEL_MODULE_LIB'],
+        os.environ['MESSAGEFACILITY_LIB'],
+        os.environ['HEP_CONCURRENCY_LIB'],
+        os.environ['FHICLCPP_LIB'],
+        os.environ['SQLITE_LIB'],
+        os.environ['CETLIB_LIB'],
+        os.environ['CETLIB_EXCEPT_LIB'],
+        os.environ['BOOST_LIB'],
+        os.environ['CLHEP_LIB_DIR'],
+        os.environ['CPPUNIT_DIR']+'/lib',
+        os.environ['HEPPDT_LIB'],
+        os.environ['ROOTSYS']+'/lib',
+        os.environ['XERCESCROOT']+'/lib',
+        os.environ['TBB_LIB'],
+        os.environ['GSL_LIB'],
+        os.environ['POSTGRESQL_LIBRARIES']
+        ]
+
+#    if mu2eOpts['satellite']:
+#        path = [ mu2eOpts['satelliteBase']+'/lib' ] + path
+
+    return path
+
+# Define the compiler and linker options.
+# These are given to scons using its Evironment.MergeFlags call.
+def mergeFlags(mu2eOpts):
+    build = mu2eOpts['build']
+    flags = ['-std=c++17','-Wall','-Wno-unused-local-typedefs','-g',
+             '-Werror','-Wl,--no-undefined','-gdwarf-2', '-Wl,--as-needed',
+             '-Werror=return-type','-Winit-self','-Woverloaded-virtual', '-DBOOST_BIND_GLOBAL_PLACEHOLDERS' ]
+    if build == 'prof':
+        flags = flags + [ '-O3', '-fno-omit-frame-pointer', '-DNDEBUG' ]
+    elif build == 'debug':
+        flags = flags + [ '-O0' ]
+    return flags
+
+
+# Prepare some shell environmentals in a form to be pushed
+# into the scons environment.
+def exportedOSEnvironment():
+    osenv = {}
+    for var in [ 'LD_LIBRARY_PATH',  'GCC_FQ_DIR',  'PATH', 'PYTHONPATH',
+                 'ROOTSYS', 'PYTHON_ROOT', 'PYTHON_DIR', 'SQLITE_FQ_DIR', 
+                 'MUSE_WORK_DIR', 'MUSE_BUILD_BASE']:
+        if var in os.environ.keys():
+            osenv[var] = os.environ[var]
+    return osenv
+
+# list of BaBar libs
+def BaBarLibs():
+    return [ 'BTrk_KalmanTrack', 'BTrk_DetectorModel', 'BTrk_TrkBase',
+             'BTrk_BField','BTrk_BbrGeom', 'BTrk_difAlgebra',
+             'BTrk_ProbTools','BTrk_BaBar', 'BTrk_MatEnv' ]
+
+#  # Walk the directory tree to locate all SConscript files.
+#  def sconscriptList(mu2eOpts):
+#      ss=[]
+#      ss_append = ss.append
+#      for root, _, files in os.walk('.', followlinks = False):
+#          if 'SConscript' in files:
+#              ss_append(os.path.join(root[2:], 'SConscript'))
+#  
+#      # If we are making a build for the trigger, do not build everything.
+#      if mu2eOpts["trigger"] == 'on':
+#          notNeeded = ["Mu2eG4/src/SConscript",
+#                       #"CRVResponse/src/SConscript",
+#                       "Sandbox/src/SConscript"]
+#          for x in notNeeded:
+#              if x in ss:
+#                  ss.remove(x)
+#  
+#      return ss
+
+
+# Walk the directory tree to locate all SConscript files.
+def sconscriptList(mu2eOpts):
+    ss = []
+    for repo in mu2eOpts['repos'].split():
+        if not os.path.islink(repo):
+            for root, dirs, files in os.walk(repo, followlinks = False):
+                if 'SConscript' in files:
+                    ss.append(os.path.join(root, 'SConscript'))
+    print("DEBUG 01",ss)
+# TODO fix trigger
+#    # If we are making a build for the trigger, do not build everything.
+#    if mu2eOpts["trigger"] == 'on':
+#        notNeeded = ["Mu2eG4/src/SConscript",
+#                     #"CRVResponse/src/SConscript",
+#                     "Sandbox/src/SConscript"]
+#        for x in notNeeded:
+#            if x in ss:
+#                ss.remove(x)
+
+    return ss
+
+
+
+# Make sure the build directories are created
+def makeSubDirs(mu2eOpts):
+    for mdir in [mu2eOpts[d] for d in ['libdir','bindir', 'gendir']]:
+        os.makedirs(mdir, exist_ok=True)
+
+#
+# a method for creating build-on-demand targets
+#
+def PhonyTarget(env,name,targets,action):
+    if not isinstance(targets,list):
+        targets = [targets]
+    if env.GetOption('clean'):
+        for t in targets:
+            if os.path.isfile(t):
+                os.remove(t)
+    else:
+        for t in targets:
+            d = os.path.dirname(t)
+            if not os.path.isdir(d):
+                os.makedirs(d)
+    return env.AlwaysBuild(env.Alias(name, [], action))
+
+
+# with -c, scons will remove all dependant files it knows about
+# but when a source file is deleted:
+# - the .os file is harmless since it will be ignored
+# - the dict and lib now contain extra objects but scons can't
+#     know that, so explicitly delete them here
+def extraCleanup():
+    return 0
+# TODO fix this
+#    for top, dirs, files in os.walk("./lib"):
+#        for name in files:
+#            ff =  os.path.join(top, name)
+#            print("removing file ", ff)
+#            os.unlink (ff)
+#
+#
+#    for top, dirs, files in os.walk("./gen"):
+#        for name in files:
+#            ff =  os.path.join(top, name)
+#            print("removing file ", ff)
+#            os.unlink (ff)
