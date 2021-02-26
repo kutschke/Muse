@@ -23,36 +23,20 @@ class mu2e_helper:
 
     def __init__(self,env):
         self.env = env
-        # full path of the directory Offline sits in
-        #self.base = env['BASE']
-        # full path to this subdir with the SConscript in variant dir
-        #self.codeDir = os.path.abspath('.') 
-
-
-        # full path of the directory Offline sits in
+        # full path of the scons top directory (MUSE_BUILD_DIR)
         self.base = env.GetLaunchDir()
         # full path to this subdir with the SConscript 
         self.codeDir = env.GetBuildPath('SConscript').replace('/SConscript','')
-
-        print("self.base",self.base)
-        print("self.codeDir",self.codeDir)
-
-        # diff like Offline/package/src
+        # diff, like Offline/package/src
         self.srcPath = os.path.relpath(self.codeDir,self.base) # the difference
-        print("self.srcPath",self.srcPath)
         tokens = self.srcPath.split('/')
-        print("DEBUG tok1 ",tokens)
         if tokens[-1] == 'src' :
             tokens.remove('src')
-        print("DEBUG tok2 ",tokens)
-
         # the repo name, like Offline
         self.repo = tokens[0]
-        print("self.repo",self.repo)
 
         # build/stub, like build/sl7-e20
         self.buildBase = env['MUSE_BUILD_BASE']
-        print("self.buildBase",self.buildBase)
 
         # where dictionaries go: build/stub/Offline/codeDir/dict
         self.dictdir = self.buildBase+'/'+self.srcPath+'/'+'dict'
@@ -60,10 +44,6 @@ class mu2e_helper:
         self.bindir = self.buildBase+'/'+self.repo+'/bin'
         # change string Offline/dir/subdir/src to dir_subdir
         self.libstub = '_'.join(tokens[1:])
-        print("self.dictdir",self.dictdir)
-        print("self.libdir",self.libdir)
-        print("self.bindir",self.bindir)
-        print("self.libstub",self.libstub)
 
         # A few places we use ClassDef in order to enable a class
         # to be fully capable at the root prompt
@@ -150,7 +130,6 @@ class mu2e_helper:
     #   Make one plugin library
     #
     def make_plugin( self, cc, userlibs, cppf = [], pf = []):
-        print("DEBUG40 ",cc,self.plugin_lib_file(cc))
         self.env.SharedLibrary( "#/"+self.plugin_lib_file(cc),
                            cc,
                            LIBS=[ userlibs],
@@ -172,17 +151,10 @@ class mu2e_helper:
     #   Make the dictionary and rootmap plugins.
     #
     def make_dict_and_map( self, userlibs=[], pf_dict=[] ):
-        print("DEBUG50 ",os.path.abspath('.'))
         cfs = self.codeDir+'/classes.h'
         xfs = self.codeDir+'/classes_def.xml'
-        print("DEBUG50.5 ",cfs)
-        # TODO fix this
-        if not os.path.exists(cfs) or not os.path.exists(xfs):
-            return
-        #if os.path.exists('classes.h') and os.path.exists('classes_def.xml'):
+
         sources = ['classes.h','classes_def.xml']
-        #sources = ['#/'+self.srcPath+'/classes.h',
-        #           '#/'+self.srcPath+'/classes_def.xml']
         targets = ["#/"+self.dict_file(),
                    "#/"+self.rootmap_file(),
                    "#/"+self.pcm_file() ]
@@ -191,17 +163,14 @@ class mu2e_helper:
             dflag = ""
         else:
             dflag = "-DNDEBUG"
-        print("DEBUG51 ",targets, sources,self.dict_lib_file())
         self.env.DictionarySource( targets, sources ,
                                    LIBTEXT=self.dict_lib_file(),
                                    DEBUG_FLAG=dflag)
         # if classdef is used, do not make the dictionary into its own lib,
         # it will be put in the mainlib
-        print("DEBUG52 ",self.classdef)
         if self.classdef :
             return
         # make lib for the dictionary
-        print("DEBUG53 ","#/"+self.dict_lib_file(),"#/"+self.dict_file())
         self.env.SharedLibrary( "#/"+self.dict_lib_file(),
                                 "#/"+self.dict_file(),
                                 LIBS=[ userlibs ],
@@ -214,7 +183,6 @@ class mu2e_helper:
         sourceFiles = []
         for fn in [ target+"_main.cc" ] + otherSource:
             sourceFiles.append('#/'+self.srcPath+'/'+fn)
-        print("DEBUG20",sourceFiles,'#/'+self.bindir+"/"+target)
         self.env.Program(
             target = '#/'+self.bindir+"/"+target,
             source = sourceFiles,
@@ -222,7 +190,7 @@ class mu2e_helper:
             )
 
     #
-    #   Make any combo of files
+    #   Make any combination source->target
     #
     def make_generic( self, source, target, command ):
         topSources = []

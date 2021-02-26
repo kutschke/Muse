@@ -15,31 +15,30 @@ import subprocess
 # return a dictionary with mu2eOpts
 def mu2eEnvironment():
     mu2eOpts = {}
-#    if 'MU2E_BASE_RELEASE' not in os.environ:
-#        raise Exception('You have not specified MU2E_BASE_RELEASE for this build')
-#    primaryBase = os.environ['MU2E_BASE_RELEASE']
-#    mu2eOpts["primaryBase"] = primaryBase
-    buildBase = 'build/'+os.environ['MUSE_STUB']
 
-#    if "MU2E_SATELLITE_RELEASE" in os.environ:
-#        mu2eOpts["satellite"] = True
-#        mu2eOpts["satelliteBase"] = os.environ["MU2E_SATELLITE_RELEASE"]
-#        base = mu2eOpts["satelliteBase"]
-#    else:
-#        mu2eOpts["satellite"] = False
-#        base = mu2eOpts["primaryBase"]
-
-# the directory that includes local repos
+    # the directory that includes local repos and 'build'
     workDir = os.environ['MUSE_WORK_DIR']
 
-#    # workDir is the local Offline area where output is written
+    # subdir where built files are put
+    buildBase = 'build/'+os.environ['MUSE_STUB']
+
     mu2eOpts['workDir'] = workDir
     mu2eOpts['buildBase'] = buildBase
     mu2eOpts['libdir'] = buildBase+'/lib'
     mu2eOpts['bindir'] = buildBase+'/bin'
     mu2eOpts['gendir'] = buildBase+'/gen'
 
-    mu2eOpts['repos'] = os.environ['MUSE_REPOS']
+# create a list of repos in link order
+    repos = os.environ['MUSE_REPOS'].split()
+    order = os.environ['MUSE_LINK_ORDER'].split()
+    ordered = ""
+    for r in order:
+        if r in repos :  # add it to the end, in order
+            ordered = ordered + " " + r
+        else :  # if unknown, add it to the front
+            ordered = r + " " + ordered
+    
+    mu2eOpts['repos'] = ordered
 
     # prof or debug
     mu2eOpts['build'] = os.environ['MUSE_BUILD']
@@ -63,19 +62,6 @@ def mu2eEnvironment():
     else:
         mu2eOpts['trigger'] = 'off'
 
-#    envopts = os.environ['MU2E_SETUP_BUILDOPTS'].strip()
-#    fsopts  = subprocess.check_output(primaryBase+"/buildopts",shell=True).strip().decode() # decode to convert byte string to text
-#    if envopts != fsopts:
-#        raise Exception("ERROR: Inconsistent build options: (MU2E_SETUP_BUILDOPTS vs ./buildopts)\n"
-#             +"Please source setup.sh after setting new options with buildopts.\n")
-#
-#    # copy the buildopts to the dictionary
-#    mu2eOpts["buildopts"] = fsopts
-#    for line in fsopts.split():
-#        pp = line.split("=")
-#        mu2eOpts[pp[0]] = pp[1]  # e.g.  mu2eOpts["build"] = "prof"
-
-
     return mu2eOpts
 
 # the list of root libraries
@@ -87,12 +73,14 @@ def rootLibs():
 
 # the include path
 def cppPath(mu2eOpts):
-#    temp = mu2eOpts["primaryBase"].replace("/Offline","")
+
     path = []
+    # add the build directory of each package, for generated code
     for repo in mu2eOpts['repos'].split():
         path.append(mu2eOpts["workDir"]+'/'+repo)
+    # the directory containing the local repos
     path.append(mu2eOpts["workDir"])
-#    temp = mu2eOpts["primaryBase"]
+
     path = path + [
         os.environ['ART_INC'],
         os.environ['ART_ROOT_IO_INC'],
@@ -119,21 +107,19 @@ def cppPath(mu2eOpts):
         os.environ['POSTGRESQL_INC']
         ]
 
-#    if mu2eOpts['satellite']:
-#        temp = mu2eOpts["satelliteBase"].replace("/Offline","")
-#        path = [ mu2eOpts['satelliteBase'] ] + path
-
     return path
 
 # the ld_link_library path
 def libPath(mu2eOpts):
+
     path = []
+
+    # the built lib area of each local repo
+    # the order was determined above
     for repo in mu2eOpts['repos'].split():
-        print('DEBUG 30',repo, '#/'+mu2eOpts["buildBase"]+'/'+repo+'/lib')
         path.append('#/'+mu2eOpts["buildBase"]+'/'+repo+'/lib')
 
     path = path + [
-#        mu2eOpts['primaryBase']+'/lib',
         os.environ['ART_LIB'],
         os.environ['ART_ROOT_IO_LIB'],
         os.environ['CANVAS_LIB'],
@@ -157,9 +143,6 @@ def libPath(mu2eOpts):
         os.environ['GSL_LIB'],
         os.environ['POSTGRESQL_LIBRARIES']
         ]
-
-#    if mu2eOpts['satellite']:
-#        path = [ mu2eOpts['satelliteBase']+'/lib' ] + path
 
     return path
 
@@ -194,27 +177,8 @@ def BaBarLibs():
              'BTrk_BField','BTrk_BbrGeom', 'BTrk_difAlgebra',
              'BTrk_ProbTools','BTrk_BaBar', 'BTrk_MatEnv' ]
 
-#  # Walk the directory tree to locate all SConscript files.
-#  def sconscriptList(mu2eOpts):
-#      ss=[]
-#      ss_append = ss.append
-#      for root, _, files in os.walk('.', followlinks = False):
-#          if 'SConscript' in files:
-#              ss_append(os.path.join(root[2:], 'SConscript'))
-#  
-#      # If we are making a build for the trigger, do not build everything.
-#      if mu2eOpts["trigger"] == 'on':
-#          notNeeded = ["Mu2eG4/src/SConscript",
-#                       #"CRVResponse/src/SConscript",
-#                       "Sandbox/src/SConscript"]
-#          for x in notNeeded:
-#              if x in ss:
-#                  ss.remove(x)
-#  
-#      return ss
-
-
 # Walk the directory tree to locate all SConscript files.
+# this runs in the scons top source dir, which is MUSE_WORK_DIR
 def sconscriptList(mu2eOpts):
     ss = []
     for repo in mu2eOpts['repos'].split():
@@ -222,61 +186,19 @@ def sconscriptList(mu2eOpts):
             for root, dirs, files in os.walk(repo, followlinks = False):
                 if 'SConscript' in files:
                     ss.append(os.path.join(root, 'SConscript'))
-    print("DEBUG 01",ss)
-# TODO fix trigger
-#    # If we are making a build for the trigger, do not build everything.
-#    if mu2eOpts["trigger"] == 'on':
-#        notNeeded = ["Mu2eG4/src/SConscript",
-#                     #"CRVResponse/src/SConscript",
-#                     "Sandbox/src/SConscript"]
-#        for x in notNeeded:
-#            if x in ss:
-#                ss.remove(x)
 
     return ss
 
 
 
-# Make sure the build directories are created
-def makeSubDirs(mu2eOpts):
-    for mdir in [mu2eOpts[d] for d in ['libdir','bindir', 'gendir']]:
-        os.makedirs(mdir, exist_ok=True)
-
-#
-# a method for creating build-on-demand targets
-#
-def PhonyTarget(env,name,targets,action):
-    if not isinstance(targets,list):
-        targets = [targets]
-    if env.GetOption('clean'):
-        for t in targets:
-            if os.path.isfile(t):
-                os.remove(t)
-    else:
-        for t in targets:
-            d = os.path.dirname(t)
-            if not os.path.isdir(d):
-                os.makedirs(d)
-    return env.AlwaysBuild(env.Alias(name, [], action))
-
-
 # with -c, scons will remove all dependant files it knows about
 # but when a source file is deleted:
-# - the .os file is harmless since it will be ignored
-# - the dict and lib now contain extra objects but scons can't
-#     know that, so explicitly delete them here
+# - the .os file will be left in the build dir
+# - the dict and lib now contain extra objects
+# so explicitly delete all files left in the build dir
 def extraCleanup():
-    return 0
-# TODO fix this
-#    for top, dirs, files in os.walk("./lib"):
-#        for name in files:
-#            ff =  os.path.join(top, name)
-#            print("removing file ", ff)
-#            os.unlink (ff)
-#
-#
-#    for top, dirs, files in os.walk("./gen"):
-#        for name in files:
-#            ff =  os.path.join(top, name)
-#            print("removing file ", ff)
-#            os.unlink (ff)
+    for top, dirs, files in os.walk(mu2eOpts['buildBase']):
+        for name in files:
+            ff =  os.path.join(top, name)
+            print("removing file ", ff)
+            os.unlink (ff)
