@@ -42,6 +42,8 @@ echo "  MUSE_BUILD_BASE = " $MUSE_BUILD_BASE
 echo "  MUSE_BUILD_DIR = " $MUSE_BUILD_DIR
 [ $MUSE_VERBOSE -gt 0 ] && echo "space-separated list of local repos to build:"
 echo "  MUSE_REPOS = " $MUSE_REPOS
+[ $MUSE_VERBOSE -gt 0 ] && echo "the link order of known packages:"
+echo "  MUSE_LINK_ORDER = " $MUSE_LINK_ORDER
 [ $MUSE_VERBOSE -gt 0 ] && echo "envset determines the UPS products to use:"
 echo "  MUSE_ENVSET = " $MUSE_ENVSET
 

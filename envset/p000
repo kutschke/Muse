@@ -4,6 +4,11 @@
 ##
 
 #
+# define the link order of the known packages
+#
+export MUSE_LINK_ORDER="Tutorial Offline"
+
+#
 # use preferred build type, if none requested
 #
 if [ -z "$MUSE_BUILD" ]; then
