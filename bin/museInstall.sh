@@ -56,7 +56,7 @@ QUALIFIERS = ""
       envPrepend(PATH, \${\${UPS_PROD_NAME_UC}_DIR}/bin)
       envPrepend(PYTHONPATH, \${\${UPS_PROD_NAME_UC}_DIR}/python)
       envSet( MUSE_ENVSET_DIR, /cvmfs/mu2e.opensciencegrid.org/DataFiles/Muse)
-      addAlias(muse,source \${\${UPS_PROD_NAME_UC}_DIR}/bin/muse.sh)
+      addAlias(muse,source \${\${UPS_PROD_NAME_UC}_DIR}/bin/muse)
 
 End:
 

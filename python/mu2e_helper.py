@@ -38,8 +38,9 @@ class mu2e_helper:
         # build/stub, like build/sl7-e20
         self.buildBase = env['MUSE_BUILD_BASE']
 
-        # where dictionaries go: build/stub/Offline/codeDir/dict
-        self.dictdir = self.buildBase+'/'+self.srcPath+'/'+'dict'
+        # where dictionaries go: build/stub/Offline/tmp/codeDir/dict
+        self.dictdir = self.buildBase+'/'+\
+                       self.srcPath.replace(self.repo,self.repo+"/tmp")+"/dict"
         self.libdir = self.buildBase+'/'+self.repo+'/lib'
         self.bindir = self.buildBase+'/'+self.repo+'/bin'
         # change string Offline/dir/subdir/src to dir_subdir

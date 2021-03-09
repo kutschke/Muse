@@ -1,0 +1,7 @@
+*.dblite
+*~
+*_C.d
+*.os
+*.o
+*.art
+*.log*

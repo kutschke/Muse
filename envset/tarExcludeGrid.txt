@@ -1,0 +1,9 @@
+.git
+.gitignore
+*.h
+*.icc
+*.cc
+SConstruct
+SConscript
+Makefile
+GNUmakefile
