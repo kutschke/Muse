@@ -31,6 +31,11 @@ fi
 
 TARGET="$1"
 
+#
+# we are assuming that the user specified the target relative 
+# to the working dir, if a relative path
+#
+
 if [ ! -d "$TARGET" ]; then
         echo "ERROR target is not a directory: $TARGET"
 	exit 1
@@ -38,6 +43,12 @@ fi
 
 if [ ! -d link ]; then
     mkdir link
+fi
+
+reg="^/.*"
+if [[ ! "$TARGET"  =~ $reg  ]]; then
+    # if target was a relative path, then account for the link subdir
+    TARGET="../$TARGET"
 fi
 
 LINK=link/$(basename $TARGET)
