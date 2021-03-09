@@ -182,7 +182,7 @@ if [ -z "$MUSE_ENVSET" ]; then
 
     # take the latest from the env sets in the user area
 
-    WORD=$( find $MUSE_WORK_DIR -maxdepth 1  -type f -printf "%f\n" -regex '^u[0-9]..$' | sort | tail -1 )
+    WORD=$( find $MUSE_WORK_DIR -maxdepth 1  -type f  -regex ".*u[0-9]..$" -printf "%f\n" | sort | tail -1 )
     if [ -n "$WORD" ]; then
 	export MUSE_ENVSET=$WORD
 	if [ $MUSE_VERBOSE -gt 0 ]; then 
@@ -195,7 +195,7 @@ fi
 
 if [ -z "$MUSE_ENVSET" ]; then
     # if still missing, go to permanent repo of environmental sets
-    WORD=$( find $MUSE_ENVSET_DIR -maxdepth 1  -type f -printf "%f\n" -regex '^d[0-9]..$' | sort | tail -1 )
+    WORD=$( find $MUSE_ENVSET_DIR -maxdepth 1  -type f  -regex '.*p[0-9]..$' -printf "%f\n" | sort | tail -1 )
     if [ -n "$WORD" ]; then
 	export MUSE_ENVSET=$WORD
 	if [ $MUSE_VERBOSE -gt 0 ]; then 
@@ -203,6 +203,11 @@ if [ -z "$MUSE_ENVSET" ]; then
 	    echo "           $MUSE_ENVSET_DIR"
 	fi
     fi
+fi
+
+if [ -z "$MUSE_ENVSET"  ]; then
+    echo "ERROR - did not find any env set"
+    return 1
 fi
 
 
@@ -222,6 +227,10 @@ else
     RC=1
 fi
 
+if [ -z "$MUSE_BUILD"  ]; then
+    echo "ERROR - executing env set did not set build"
+    return 1
+fi
 
 #
 # set the stub for the build path
@@ -405,8 +414,6 @@ fi
 export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR`
 export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR`
     export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR`
-
-[ $MUSE_VERBOSE -gt 0 ] && source museStatus.sh
 
 if [ $RC -ne 0  ]; then
     echo "ERROR - setup did not run correctly"
