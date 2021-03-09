@@ -1,0 +1,455 @@
+#! /bin/bash
+#
+# script to do partial checkout of the Offline git repo
+# See https://mu2ewiki.fnal.gov/wiki/GitPartialCheckout
+#
+
+#
+# init the partial checkout directory
+#
+pg_usage() {
+echo "
+
+  pgit list
+     see the continuous integration releases available
+  pgit init [REPO_PATH/Offline] [branch]
+     start partial checkout (requires re-setup and scons -c)
+     If run in an existing checkout, with no arguments, 
+         will use a previous base repo path
+  pgit status
+     See the status of the build area, including dependency issues
+  pgit add PACKAGE [PACKAGE]
+     add the PACKAGE subdirectory
+  pgit rm PACKAGE [PACKAGE]
+     remove the PACKAGE subdirectory (requires scons -c)
+  pgit quit
+     revert to non-sparse checkout (requires re-setup)
+  pgit help
+     print this help
+
+"
+}
+
+pg_flavor() {
+  /usr/bin/ldd --version | head -1 | awk '{v=$NF; if(v<2.17) print "SLF6"; else print "SLF7"}'
+}
+
+#
+# list the repos on $CI_BASE
+#
+pg_list() {
+    if [ ! -d $CI_BASE ]; then
+	echo "ERROR pgit - did not find $CI_BASE"
+	return 1
+    fi
+    local branches=$( ls $CI_BASE )
+    for branch in $branches
+    do
+	find $CI_BASE/$branch -mindepth 3 -maxdepth 3 \
+	    -printf "%TY-%Tm-%Td %TH:%TM %p\n" | grep $FLAVOR | \
+	    sort -r | sed 's|'$CI_BASE/'||'
+    done
+}
+
+#
+# get current branch
+#
+pg_branch() {
+    git status -b | awk '{if(NR==1) print $3}'
+}
+
+#
+# check if there are diffs or untracked in local checkout
+# if there is an argument, then check only that directory
+#
+pg_test_clean() {
+    local DD=$1
+    local ret=""
+    # diffs
+    local test1=$( git diff --shortstat $DD )
+    [ -n "$test1" ] && ret="diffs"
+    # untracked
+    local test2=$( git ls-files --others --exclude-standard $DD )
+    if [ -n "$test2" ]; then
+	[ -n "$ret" ] && ret="${ret},"
+	ret="${ret}untracked files"
+    fi
+
+    # if we are checking only one dir, then 
+    # return now, before looking for unpushed commits
+    if [ -n "$DD" ]; then
+	echo $ret
+	return
+    fi
+
+    # check for unpushed commits
+    local branch=$( pg_branch )
+    local test3=$( git diff --shortstat origin/${branch}..HEAD )
+    #echo $branch $test3 > s.txt
+    if [ -n "$test3" ]; then
+	[ -n "$ret" ] && ret="${ret},"
+	ret="${ret}unpushed commits"
+    fi
+    echo $ret
+}
+
+#
+# init the partial checkout directory
+# use cases:
+# 1 no existing Offline
+# 2 Offline exists, in full checkout
+#   a) repo requested
+#   b) no repo requested, has stored backing repo
+#   c) no repo requested, no stored
+# 3 Offline exists in partial checkout
+#   a) repo requested, same as current
+#   b) repo requested, not same as current
+#   c) no repo requested
+#
+pg_init() {
+    local base_repo_ask="$1"
+    local branch="$2"
+
+    # default branch is master
+    if [ -z "$branch"  ]; then
+	branch="master"
+    fi
+
+    # PWD must be either in a Offline dir
+    # or a place where Offline can be created.
+    if [ -d Offline ]; then
+	echo "ERROR pgit - ./Offline exists - either go to a directory"
+	echo "    without an Offline, to create it, or cd inside "
+	echo "    an Offline to transform it"
+	return 1
+    fi
+
+    # are we in an existing checkout?
+    local existing="false"
+    otest=$( basename $PWD )
+    if [[ "$otest" == "Offline" && -d .git  ]]; then
+	existing="true"
+
+        # if there no base repo was specified 
+	# see if we can find it here
+	if [ -z "$base_repo_ask" ]; then
+	    local stored_repo=$( git config mu2e.baserelease )
+	    echo "pgit - found stored base repo:"
+	    echo "    $stored_repo"
+	    base_repo="$stored_repo"
+	fi
+
+    fi
+
+    # if the requested repo is full path
+    if [ -d "$base_repo_ask" ]; then
+	base_repo="$base_repo_ask"
+    else
+    # if the repo is not a full path, try to find full path on cvmfs
+	cvmfs_dir=$( pg_list | grep $base_repo_ask | head -1 | awk '{print $3}' )
+	if [ -z "$cvmfs_dir" ]; then
+	    echo "ERROR pgit - base repo: '$base_repo' is not found"
+	    return 1
+	fi
+	# overrides branch, if it was specified
+	branch=$( echo $cvmfs_dir | awk -F/ '{print $1}' )
+	base_repo=$CI_BASE/$cvmfs_dir/Offline
+    fi
+
+    # base_repo must be defined by now
+    if [ -z "$base_repo"  ]; then
+	echo "ERROR pgit - did not find any base repo, "
+	echo "         please provide one on the command line"
+	return 1
+    fi
+
+    # check that base_repo is a repo
+    local otest=$( basename $base_repo )
+    if [[ "$otest" != "Offline" || ! -d $base_repo ]]; then
+	echo "ERROR pgit - base repo: '$base_repo' is not an Offline directory"
+	return 1
+    fi
+
+
+    if [ "$existing" == "true" ]; then
+
+	# check that we can remove directories 
+	# without losing any local work
+	clean=$( pg_test_clean )
+	if [ -n "$clean" ]; then
+	    echo "ERROR pgit - you are in a working dir with $clean"
+	    echo "     make your working area clean before running pgit init"
+	    return 1
+	fi
+
+    else
+	# we are not in an existing directory
+	# create from scratch 
+	mkdir Offline
+	
+    fi  # end if not existing
+
+    cd Offline
+    echo "Cloning $base_repo" | \
+	sed 's|mu2e-development.opensciencegrid.org/branches|\.\.\.|'
+    rm -rf .git
+    rsync -aur $base_repo/.git .
+
+    # point remote to the remote of the source clone
+    local CWD=$PWD
+    cd $base_repo
+    local remote=$( git remote get-url origin )
+    RC=$?
+    cd $CWD
+    if [[ $RC -ne 0 || -z "$remote" ]]; then
+        echo "ERROR pgit - git failed to find remote url, RC=$RC"
+        echo "     you are in an unknown state - start over"
+        return 2
+    fi
+
+    git remote set-url origin $remote
+    RC=$?
+    if [ $RC -ne 0 ]; then
+        echo "ERROR pgit - git remote set-url failed with RC=$RC"
+        echo "     you are in an unknown state - start over"
+        return 2
+    fi
+
+    # save variables to .git/config
+    git config core.sparsecheckout true
+    git config mu2e.baserelease $base_repo
+
+    # what to check out initially
+    echo "/SConstruct" >  .git/info/sparse-checkout
+    echo "/scripts" >>  .git/info/sparse-checkout
+    echo "/setup.sh" >>  .git/info/sparse-checkout
+    #echo "/buildopts" >>  .git/info/sparse-checkout
+    #echo "/.buildopts" >>  .git/info/sparse-checkout
+    echo "/.gitignore" >>  .git/info/sparse-checkout
+    echo "/bin" >>  .git/info/sparse-checkout
+    echo "/site_scons" >>  .git/info/sparse-checkout
+
+    git read-tree --reset -u HEAD
+    RC=$?
+    if [ $RC -ne 0 ]; then
+	echo "ERROR pgit - git checkout master failed with RC=$RC"
+	echo "     you are in an unknown state - start over"
+	return 4
+    fi
+
+    echo "pgit pulling the head of $branch"
+    git pull -q
+    RC=$?
+    if [ $RC -ne 0 ]; then
+	echo "ERROR pgit - git pull failed with RC=$RC"
+	echo "     you are in an unknown state - start over"
+	return 3
+    fi
+
+    if [ "$existing" == "true" ]; then
+	echo "pgit - *** you must re-login, setup, and \"scons -c\" "
+	echo "   to correct your build and paths to the new setup ***"
+    fi
+
+    return 0
+
+}
+
+
+
+#
+# check the local rel against the base
+#
+pg_status() {
+    local branch=$( pg_branch )
+    echo "pgit - fetching..."
+    git fetch
+
+    local base_repo=$( git config mu2e.baserelease )
+    if [ -z $base_repo  ]; then
+	echo "pgit - WARNING - did not detect a base release, can't check much - "
+	echo "         you probably want to run pgit init?"
+    else
+	local hash=$( git rev-parse origin/$branch | cut -c 1-8 )
+	cwd=$PWD
+	cd $base_repo
+	local basehash=$( git rev-parse origin/$branch | cut -c 1-8 )
+	cd $cwd
+	if [ "$basehash" != "$hash"  ]; then
+	    echo "pgit - WARNING - your base release is at $basehash "
+	    "    but the head  of branch $branch is at $hash"
+	    "    your working area may be fatally out of sync with your base"
+	    
+	fi
+
+	local depfile=$base_repo/../deps.txt
+	dirs=$(cat $depfile | grep HDR | awk '{print $2}')
+	local deps=""
+	local ndir=0
+	for dir in $dirs
+	do
+	    if [ -d $dir ]; then
+		
+		# see what depends on this checked-out dir
+		while read line
+		do
+		    if [[ "$line" =~ "HDR" ]]; then
+			local temp=$( echo $line | awk '{x=0; for(i=3; i<=NF; i++) {if($i=="'$dir'") x=1;} if(x==1) print $2; }' )
+		    fi
+		    if [ "$temp" != "$dir" ]; then
+			deps="$deps $temp"
+		    fi
+		done < $depfile
+
+		deps=$( echo $deps $temp | tr " " "\n" | sort -u  )
+		ndir=$(($ndir + 1))
+	    fi
+	done
+	if [ -z "$deps"  ]; then
+	    echo "pgit - did not find any directories dependent on your $ndir checked-out directories"	    
+	else
+	    echo "pgit - WARNING - the following set of Offline directories"
+	    echo " depend on your local checked-out header files. If you modify"
+	    echo " a local header file, the base release will be inconsistent."
+	    echo " You can \"pgit add\" these to your local area,"
+	    echo " \"pgit quit\" partial checkout, or analyze and take your chances... "
+	    echo " " 
+	    echo $deps
+	    echo " " 
+	fi
+    fi
+
+    git status
+
+}
+
+
+#
+# add packages
+#
+pg_add() {
+    local branch=$( pg_branch )
+
+    for DD in $@
+    do
+	SDD="/$DD"
+	if [[ "$DD" =~ "/" ]]; then
+	    echo "pgit - add target connot contain '/' - skipping"
+	elif grep -q $SDD .git/info/sparse-checkout ; then
+	    echo "pgit - directory $DD already in checkout list"
+	else
+	    echo $SDD >>  .git/info/sparse-checkout
+	    echo "pgit - directory $DD added"
+	fi
+    done
+    
+    git checkout $branch
+}
+
+#
+# remove packages
+#
+pg_rm() {
+
+    local branch=$( pg_branch )
+
+    for DD in $@
+    do
+	SDD="/$DD"
+	if grep -q $SDD .git/info/sparse-checkout ; then
+	    if [ -d $DD ]; then
+		local test=$( pg_test_clean $DD )
+		if [ -n "$test" ]; then
+		    echo "pgit - directory $DD has local changes"
+		    echo "          - stash or reset and try again"
+		    continue
+		fi
+
+		# in order for the dir to go away, all 
+		# untracked files must be gone
+		find $DD -name "*.os" -delete
+
+	    else
+		echo "pgit - directory $DD was not found locally"
+	    fi
+
+	    sed -i '/\/'${DD}'/d' .git/info/sparse-checkout
+	    echo "pgit - directory $DD removed from checkout list"
+	else
+	    echo "pgit - directory $DD was not in checkout list"
+	fi
+    done
+
+    # this acts on the change
+    git checkout $branch
+
+    echo "pgit - *** use \"scons -c\" to clean libriares of removed local source code ***"
+
+}
+
+#
+# undo the partial checkout
+#
+pg_quit() {
+
+    local clean=$( pg_test_clean )
+    if [ -n "$clean" ]; then
+	echo "ERROR pgit - you are in a working dir with $clean"
+	echo "     make your working area clean before running pgit init"
+	return 1
+    fi
+
+    echo "pgit - turning off partial checkout"
+    echo "*" > .git/info/sparse-checkout
+    git config core.sparsecheckout true
+    git read-tree --reset -u HEAD
+
+    rm .git/info/sparse-checkout
+    git config core.sparsecheckout false
+    # leave the repo defined in case we want to go back to it
+    #git config --unset mu2e.baserelease
+
+    echo "pgit - *** you must re-login, setup, and \"scons -c\" to correct your paths ***"
+}
+
+
+
+#
+# main
+#
+
+
+export CI_BASE=/cvmfs/mu2e-development.opensciencegrid.org/branches
+export FLAVOR=$(pg_flavor)
+
+command="$1"
+shift
+
+case "$command" in
+    list)
+	pg_list $@
+	;;
+    init)
+	pg_init $@
+	;;
+    add)
+	pg_add $@
+	;;
+    rm)
+	pg_rm $@
+	;;
+    quit)
+	pg_quit $@
+	;;
+    status)
+	pg_status $@
+	;;
+    help)
+	pg_usage $@
+	;;
+    *)
+	echo "ERROR pgit - unknown command: $command, try pgit help"
+	;;
+esac
+
+
