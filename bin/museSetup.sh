@@ -182,12 +182,12 @@ if [ -z "$MUSE_ENVSET" ]; then
 
     # take the latest from the env sets in the user area
 
-    WORD=$( find $MUSE_WORK_DIR/envset -maxdepth 1  -type f -printf "%f\n" -regex '^u[0-9]..$' | sort | tail -1 )
+    WORD=$( find $MUSE_WORK_DIR -maxdepth 1  -type f -printf "%f\n" -regex '^u[0-9]..$' | sort | tail -1 )
     if [ -n "$WORD" ]; then
 	export MUSE_ENVSET=$WORD
 	if [ $MUSE_VERBOSE -gt 0 ]; then 
 	    echo "INFO - using  environment $MUSE_ENVSET from" 
-	    echo "           $MUSE_WORK_DIR/envset"
+	    echo "           $MUSE_WORK_DIR"
 	fi
     fi
 

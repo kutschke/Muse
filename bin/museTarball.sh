@@ -109,10 +109,10 @@ fi
 # create an empty tarball
 tar -cf $TBALL -T /dev/null
 # write to this tarball and do basic excludes like tmp areas
-FLAGS=" -rf $TBALL  -X $MUSE_DIR/envset/tarExclude.txt "
+FLAGS=" -rf $TBALL  -X $MUSE_DIR/config/tarExclude.txt "
 if [ "$RELEASE" == "false" ] ; then    # for grid tarball
     # also exclude *.cc and .git
-    FLAGS=" $FLAGS  -X $MUSE_DIR/envset/tarExcludeGrid.txt"
+    FLAGS=" $FLAGS  -X $MUSE_DIR/config/tarExcludeGrid.txt"
     # put it in Code subdirectory
     FLAGS=" $FLAGS  --transform=s|^|Code/| "
 fi
