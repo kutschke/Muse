@@ -85,10 +85,18 @@ if [ "$COMMAND" == "setup" ]; then
     cd $OWD
     $DONE $RC
 
+elif [ "$COMMAND" == "link" ]; then    
+
+    $MUSE_DIR/bin/museLink.sh "$@"
+    RC=$?
+
+    $DONE $RC
+
 fi
 
 if [ -z "$MUSE_WORK_DIR" ]; then
-    echo "ERROR - MUSE_WORK_DIR not set - muse setup must be run first"
+    echo "EROR - MUSE_WORK_DIR not set - muse setup must be run first"
+    $DONE 1
 fi
 
 cd $MUSE_WORK_DIR
@@ -101,11 +109,6 @@ if [ "$COMMAND" == "build" ]; then
 elif [ "$COMMAND" == "status" ]; then    
 
     $MUSE_DIR/bin/museStatus.sh "$@"
-    RC=$?
-
-elif [ "$COMMAND" == "link" ]; then    
-
-    $MUSE_DIR/bin/museLink.sh "$@"
     RC=$?
 
 elif [ "$COMMAND" == "tarball" ]; then    

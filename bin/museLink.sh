@@ -24,8 +24,6 @@ EOF
 }
 
 
-[ $MUSE_VERBOSE -gt 0 ] && echo "INFO - running museLink with args: $@"
-
 if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
     usageLink
     exit 0
@@ -44,8 +42,6 @@ fi
 
 LINK=link/$(basename $TARGET)
 ln -s $TARGET $LINK
-
-[ $MUSE_VERBOSE -gt 0 ] && echo "INFO - created link $LINK to $TARGET"
 
 if [ -n "$MUSE_WORK_DIR" ]; then
     echo "WARNING - Muse is already already setup - adding links "
