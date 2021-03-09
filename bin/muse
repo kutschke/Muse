@@ -3,7 +3,7 @@
 # script to drive the muse command to setup and build Mu2e analysis repos
 #
 
-usage() {
+museUsage() {
 
     cat << EOF
  
@@ -16,9 +16,10 @@ usage() {
      - h print help
 
     action:
-      status - print status of setup
-      setup  - setup UPS products and path
-      build   - run scons
+       status - print status of setup
+       setup  - setup UPS products and path
+       build   - run scons
+       link   - link to packages in another build area
 
    To see actions options, add "-h" to the action
 
@@ -26,13 +27,25 @@ EOF
 
 }
 
+#
+# this script can be sourced (for setup) 
+# or executed, which is necessary for IDE's
+# decide here if we need to return or exit
+#
+if [ "$(basename $0 2>/dev/null)" = "muse" ];then
+    #exe mode
+    DONE=exit
+else
+    #source mode
+    DONE=return
+fi
 
 #
 # checks
 #
 if [ -z "$MU2E" ]; then
     echo "ERROR - muse was not setup"
-    return 1
+    $DONE 1
 fi
 
 
@@ -49,8 +62,8 @@ if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
 fi
 
 if [[ "$1" == "help" || "$1" == "-h" || "$1" == "--help" ]]; then
-    usage
-    return 0
+    museUsage
+    $DONE 0
 fi
 
 
@@ -58,7 +71,7 @@ COMMAND=$1
 shift
 if [ -z "$COMMAND" ]; then
     echo "ERROR - no muse command word"
-    return 1
+    $DONE 1
 fi
 
 OWD=$PWD
@@ -69,22 +82,44 @@ if [ "$COMMAND" == "setup" ]; then
     source museSetup.sh "$@"
     RC=$?
 
-elif [ "$COMMAND" == "build" ]; then    
+    cd $OWD
+    $DONE $RC
 
-    source $MUSE_DIR/bin/museBuild.sh "$@"
+fi
+
+if [ -z "$MUSE_WORK_DIR" ]; then
+    echo "ERROR - MUSE_WORK_DIR not set - muse setup must be run first"
+fi
+
+cd $MUSE_WORK_DIR
+
+if [ "$COMMAND" == "build" ]; then    
+
+    $MUSE_DIR/bin/museBuild.sh "$@"
     RC=$?
 
 elif [ "$COMMAND" == "status" ]; then    
 
-    source $MUSE_DIR/bin/museStatus.sh "$@"
+    $MUSE_DIR/bin/museStatus.sh "$@"
+    RC=$?
+
+elif [ "$COMMAND" == "link" ]; then    
+
+    $MUSE_DIR/bin/museLink.sh "$@"
+    RC=$?
+
+elif [ "$COMMAND" == "tarball" ]; then    
+
+    $MUSE_DIR/bin/museTarball.sh "$@"
     RC=$?
 
 else 
     echo "ERROR - unknown command  $COMMAND"
-    return 1
+    cd $OWD
+    $DONE 1
 fi
 
 cd $OWD
-return $RC
+$DONE $RC
 
 

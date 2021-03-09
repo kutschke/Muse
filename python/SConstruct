@@ -68,11 +68,13 @@ env = Environment( CPPPATH = sch.cppPath(mu2eOpts),   # $ART_INC ...
                    LINKCOMSTR = linkcomstr,
                    SHLINKCOMSTR= linkcomstr,
                    # so we can find compilation_db from a satellite build
-                   toolpath=[os.path.join(os.environ['MU2E_BASE_RELEASE'],'site_scons/site_tools')]
+                   # TODO fix this 
+                   #toolpath=[os.path.join(os.environ['MU2E_BASE_RELEASE'],'site_scons/site_tools')]
 )
 
 # Make the Compilation DB generator available in the environment
-env.Tool('compilation_db', COMPILATIONDB_COMSTR=None)
+# TODO fix this
+#env.Tool('compilation_db', COMPILATIONDB_COMSTR=None)
 
 # Only re-compute an MD5 hash for a build target if the timestamp changed.
 env.Decider('MD5-timestamp')
@@ -128,8 +130,10 @@ ss = sch.sconscriptList(mu2eOpts)
 # scons builder commands like env.SharedLibrary are examined 
 #  for dependences and scheduled to be executed in parallel, as possible
 for sc in ss:
+    # transform Offline/X/src/SConscript to build/stub/Offline/tmp/X/src
     dd = sc.replace('/SConscript','')
-    vd = mu2eOpts['buildBase']+'/'+dd
+    tok = dd.split("/")
+    vd = mu2eOpts['buildBase']+"/"+tok[0]+'/tmp/'+"/".join(tok[1:])
     env.SConscript(sc,variant_dir=vd,duplicate=0)
 
 #  with -c, scons will remove all dependant files it knows about.

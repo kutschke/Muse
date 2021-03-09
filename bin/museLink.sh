@@ -28,14 +28,14 @@ EOF
 
 if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
     usageLink
-    return 0
+    exit 0
 fi
 
 TARGET="$1"
 
 if [ ! -d "$TARGET" ]; then
         echo "ERROR target is not a directory: $TARGET"
-	return 1
+	exit 1
 fi
 
 if [ ! -d link ]; then
@@ -52,6 +52,6 @@ if [ -n "$MUSE_WORK_DIR" ]; then
     echo "           requires a new setup in a new process"
 fi
 
-return 0
+exit 0
 
 

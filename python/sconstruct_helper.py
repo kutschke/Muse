@@ -24,21 +24,13 @@ def mu2eEnvironment():
 
     mu2eOpts['workDir'] = workDir
     mu2eOpts['buildBase'] = buildBase
+    mu2eOpts['tmpdir'] = buildBase+'/tmp'
     mu2eOpts['libdir'] = buildBase+'/lib'
     mu2eOpts['bindir'] = buildBase+'/bin'
     mu2eOpts['gendir'] = buildBase+'/gen'
 
-# create a list of repos in link order
-    repos = os.environ['MUSE_REPOS'].split()
-    order = os.environ['MUSE_LINK_ORDER'].split()
-    ordered = ""
-    for r in order:
-        if r in repos :  # add it to the end, in order
-            ordered = ordered + " " + r
-        else :  # if unknown, add it to the front
-            ordered = r + " " + ordered
-    
-    mu2eOpts['repos'] = ordered
+# a list of repos in link order
+    mu2eOpts['repos'] = os.environ['MUSE_REPOS']
 
     # prof or debug
     mu2eOpts['build'] = os.environ['MUSE_BUILD']
@@ -75,11 +67,12 @@ def rootLibs():
 def cppPath(mu2eOpts):
 
     path = []
+    # the directory containing the local repos
+    path.append(mu2eOpts["workDir"])
+    path.append(mu2eOpts["workDir"]+"/link")
     # add the build directory of each package, for generated code
     for repo in mu2eOpts['repos'].split():
         path.append(mu2eOpts["workDir"]+'/'+repo)
-    # the directory containing the local repos
-    path.append(mu2eOpts["workDir"])
 
     path = path + [
         os.environ['ART_INC'],
@@ -113,36 +106,37 @@ def cppPath(mu2eOpts):
 def libPath(mu2eOpts):
 
     path = []
-
-    # the built lib area of each local repo
-    # the order was determined above
-    for repo in mu2eOpts['repos'].split():
-        path.append('#/'+mu2eOpts["buildBase"]+'/'+repo+'/lib')
-
-    path = path + [
-        os.environ['ART_LIB'],
-        os.environ['ART_ROOT_IO_LIB'],
-        os.environ['CANVAS_LIB'],
-        os.environ['BTRK_LIB'],
-        os.environ['MU2E_ARTDAQ_CORE_LIB'],
-        os.environ['ARTDAQ_CORE_LIB'],
-        os.environ['PCIE_LINUX_KERNEL_MODULE_LIB'],
-        os.environ['MESSAGEFACILITY_LIB'],
-        os.environ['HEP_CONCURRENCY_LIB'],
-        os.environ['FHICLCPP_LIB'],
-        os.environ['SQLITE_LIB'],
-        os.environ['CETLIB_LIB'],
-        os.environ['CETLIB_EXCEPT_LIB'],
-        os.environ['BOOST_LIB'],
-        os.environ['CLHEP_LIB_DIR'],
-        os.environ['CPPUNIT_DIR']+'/lib',
-        os.environ['HEPPDT_LIB'],
-        os.environ['ROOTSYS']+'/lib',
-        os.environ['XERCESCROOT']+'/lib',
-        os.environ['TBB_LIB'],
-        os.environ['GSL_LIB'],
-        os.environ['POSTGRESQL_LIBRARIES']
-        ]
+    for dir in os.environ['LD_LIBRARY_PATH'].split(":"):
+        path.append(dir)
+#    # the built lib area of each local repo
+#    # the order was determined above
+#    for repo in mu2eOpts['repos'].split():
+#        path.append('#/'+mu2eOpts["buildBase"]+'/'+repo+'/lib')
+#
+#    path = path + [
+#        os.environ['ART_LIB'],
+#        os.environ['ART_ROOT_IO_LIB'],
+#        os.environ['CANVAS_LIB'],
+#        os.environ['BTRK_LIB'],
+#        os.environ['MU2E_ARTDAQ_CORE_LIB'],
+#        os.environ['ARTDAQ_CORE_LIB'],
+#        os.environ['PCIE_LINUX_KERNEL_MODULE_LIB'],
+#        os.environ['MESSAGEFACILITY_LIB'],
+#        os.environ['HEP_CONCURRENCY_LIB'],
+#        os.environ['FHICLCPP_LIB'],
+#        os.environ['SQLITE_LIB'],
+#        os.environ['CETLIB_LIB'],
+#        os.environ['CETLIB_EXCEPT_LIB'],
+#        os.environ['BOOST_LIB'],
+#        os.environ['CLHEP_LIB_DIR'],
+#        os.environ['CPPUNIT_DIR']+'/lib',
+#        os.environ['HEPPDT_LIB'],
+#        os.environ['ROOTSYS']+'/lib',
+#        os.environ['XERCESCROOT']+'/lib',
+#        os.environ['TBB_LIB'],
+#        os.environ['GSL_LIB'],
+#        os.environ['POSTGRESQL_LIBRARIES']
+#        ]
 
     return path
 

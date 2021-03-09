@@ -17,22 +17,15 @@ if [ -n "$MUSE_WORK_DIR" ]; then
     echo "ERROR - Muse already setup for directory "
     echo "               $MUSE_WORK_DIR "
     echo "               with OPTS: $MUSE_OPTS"
-#TODO - allow repeats for now
-#    return 1
+    return 1
 fi
 
-if [ -n "$MU2E_BASE_RELEASE" ]; then
-    echo "ERROR -  MU2E_BASE_RELEASE already set to $MU2E_BASE_RELEASE"
-#TODO - allow repeats for now
-#    return 1
-fi
 
 
 #
 # determine the working dir, and MUSE_WORK_DIR
 #
 
-#echo "DEBUG $1"
 if [[ -n "$1" && "$1" != "-q" ]]; then
     if [  ! -d "$1"  ]; then
 	echo "ERROR - could not find Muse directory $1"
@@ -51,6 +44,13 @@ fi
 [ $MUSE_VERBOSE -gt 0 ] && \
     echo "INFO - set  MUSE_WORK_DIR=$MUSE_WORK_DIR"
 
+#
+# easier to work in the working dir
+#
+
+OWD=$PWD
+cd $MUSE_WORK_DIR
+
 
 #
 # set the flavor string
@@ -62,8 +62,6 @@ if ! which ups >& /dev/null ; then
 fi
 
 export MUSE_FLAVOR=$( ups flavor | awk -F- '{print $3}' )
-
-[ $MUSE_VERBOSE -gt 0 ] && echo "INFO - Muse flavor: $MUSE_FLAVOR"
 
 #
 # parse arguments - everything should be a qualifier
@@ -96,7 +94,6 @@ ree="^[pu][0-9]{3}$"
 
 for WORD in $MUSE_OPTS
 do
-    echo "parsing $WORD"
     if [ $WORD == "prof" ]; then
 	export MUSE_BUILD=prof
     elif [ $WORD == "debug" ]; then
@@ -136,13 +133,14 @@ fi
 
 
 #
-# figure out what environmental setups to run
+# figure out what environmental UPS setups to run
 #
 # cases allowed so far
-# an explicit qualifier "-q d000"
-# Offline is local, pgit or a link, and has a .muse, use .muse content
-# $MUSE_WORK_DIR/envset exists, take highest number there
-# use highest number from cvmfs
+# 1) an explicit qualifier like "-q d000"
+# 2) Offline is local, pgit or a link, and has a .muse, use recommendation there
+# 3) any other local package has a .muse with a recommendation
+# 4) $MUSE_WORK_DIR/uNNN exists, take highest number there
+# 5) use highest number from $MUSE_ENVSET_DIR
 #
 
 if [ -n "$MUSE_ENVSET" ]; then
@@ -151,41 +149,48 @@ if [ -n "$MUSE_ENVSET" ]; then
     if [ $MUSE_VERBOSE -gt 0 ]; then
 	echo "INFO - using requested environment $MUSE_ENVSET"
     fi
+fi
 
-elif [ -d $MUSE_WORK_DIR/Offline ]; then
-    # accepts both local director or link to t a directory
+if [ -z "$MUSE_ENVSET" ]; then
+    # look for a local recommendation in a package
+    DIRS=$( find $MUSE_WORK_DIR -maxdepth 1 -mindepth 1 -type d | sed 's|\./||'  |\
+      awk '{if($1!="Offline" && $1!="link/Offline") print $0}'  )
+    # check these first
+    [ -d link/Offline ] && DIRS="link/Offline $DIRS"
+    [ -d Offline ] && DIRS="Offline $DIRS"
 
-    # if there is a  local Offline, then look for a .muse file
+    for DIR in $DIRS ; do
 
-    if [ -f $MUSE_WORK_DIR/Offline/.muse ]; then
-	WORD=$( cat $MUSE_WORK_DIR/Offline/.muse | \
-	    awk '{if($1=="ENVSET") print $2}' )
-	if [ -n "$WORD" ]; then
-	    export MUSE_ENVSET=$WORD
-	    if [ $MUSE_VERBOSE -gt 0 ]; then 
-		echo "INFO - using  environment $MUSE_ENVSET from" 
-		echo "           \$MUSE_WORK_DIR/Offline/.muse"
+	if [ -f $DIR/.muse ]; then
+	    WORD=$( cat $DIR/.muse | \
+		awk '{if($1=="ENVSET") print $2}' )
+	    if [ -n "$WORD" ]; then
+		export MUSE_ENVSET=$WORD
+		if [ $MUSE_VERBOSE -gt 0 ]; then 
+		    echo "INFO - using  environment $MUSE_ENVSET from" 
+		    echo "           \$MUSE_WORK_DIR/$DIR/.muse"
+		fi
+		break
 	    fi
 	fi
-    fi
+
+    done
 
 fi
 
 if [ -z "$MUSE_ENVSET" ]; then
 
-    # take the latest from the env set repo areas
-    # if there is a user area, use that first
+    # take the latest from the env sets in the user area
 
-    if [ -d $MUSE_WORK_DIR/envset ]; then
-	WORD=$( find $MUSE_WORK_DIR/envset -maxdepth 1  -type f -printf "%f\n" -regex '^u[0-9]..$' | sort | tail -1 )
-	if [ -n "$WORD" ]; then
-	    export MUSE_ENVSET=$WORD
-	    if [ $MUSE_VERBOSE -gt 0 ]; then 
-		echo "INFO - using  environment $MUSE_ENVSET from" 
-		echo "           $MUSE_WORK_DIR/envset"
-	    fi
+    WORD=$( find $MUSE_WORK_DIR/envset -maxdepth 1  -type f -printf "%f\n" -regex '^u[0-9]..$' | sort | tail -1 )
+    if [ -n "$WORD" ]; then
+	export MUSE_ENVSET=$WORD
+	if [ $MUSE_VERBOSE -gt 0 ]; then 
+	    echo "INFO - using  environment $MUSE_ENVSET from" 
+	    echo "           $MUSE_WORK_DIR/envset"
 	fi
     fi
+
 fi
 
 if [ -z "$MUSE_ENVSET" ]; then
@@ -202,12 +207,12 @@ fi
 
 
 if [ $MUSE_VERBOSE -gt 0 ]; then 
-    echo "INFO - running $MUSE_ENVSET " 
+    echo "INFO - running environmental set $MUSE_ENVSET " 
 fi
 
 
-if [ -r $MUSE_WORK_DIR/envset/$MUSE_ENVSET ]; then
-    source $MUSE_WORK_DIR/envset/$MUSE_ENVSET
+if [ -r $MUSE_WORK_DIR/$MUSE_ENVSET ]; then
+    source $MUSE_WORK_DIR/$MUSE_ENVSET
     RC=$?
 elif [ -r $MUSE_ENVSET_DIR/$MUSE_ENVSET ]; then
     source $MUSE_ENVSET_DIR/$MUSE_ENVSET
@@ -232,7 +237,7 @@ export MUSE_STUB=${MUSE_FLAVOR}-${MUSE_BUILD}-${MUSE_COMPILER_E}-${MUSE_ENVSET}
 [ -n "$MUSE_TRIGGER" ] && export MUSE_STUB=${MUSE_STUB}-$MUSE_TRIGGER
 
 export MUSE_BUILD_BASE=build/$MUSE_STUB
-export MUSE_BUILD_DIR=$MUSE_WORK_DIR/build/$MUSE_BUILD_BASE
+export MUSE_BUILD_DIR=$MUSE_WORK_DIR/$MUSE_BUILD_BASE
 
 if [ $MUSE_VERBOSE -gt 0 ]; then
     echo MUSE_STUB=$MUSE_STUB
@@ -245,87 +250,163 @@ fi
 
 export MU2E_SEARCH_PATH=$MU2E_DATA_PATH
 
-# list of local packages
+
+# define link order
+# use the local one if it exists
+if [ -f $MUSE_WORK_DIR/linkOrder ]; then
+    TEMP=$MUSE_WORK_DIR/linkOrder
+else
+    TEMP=$MUSE_ENVSET_DIR/linkOrder
+fi
+# end up with a list of words like: Tutorial Offline
+export MUSE_LINK_ORDER=$(cat $TEMP | sed 's/#.*$//' )
+
+
+# list of local muse packages
 # buildable packages have a .muse file in the top directory
-export MUSE_REPOS=$(ls -1 */.muse | awk -F/ '{print $1}')
+
+TEMP_REPOS=$(ls -1 */.muse  2> /dev/null | awk -F/ '{print $1}')
+LEMP_REPOS=$(ls -1 link/*/.muse  2> /dev/null | awk -F/ '{print $1"/"$2}')
+
+# test if this is a linked repo
+linkReg="^link/*"
+
+#
+# the next 35 lines of code orders the repos according
+# 1) ABC before link/ABC (Offline takes link precendence over link/Offline)
+# 2) the linkOrder
+# 3) if the repo is not in the linkOrder, put it first
+#
+
+MUSE_REPOS=""
+for LREPO in $MUSE_LINK_ORDER
+do
+    for REPO in $TEMP_REPOS
+    do
+	if [ "$REPO" == "$LREPO" ]; then
+	    export MUSE_REPOS="$MUSE_REPOS $REPO"
+	fi
+    done
+    for REPO in $LEMP_REPOS
+    do
+	if [ "$REPO" == "link/$LREPO" ]; then
+	    export MUSE_REPOS="$MUSE_REPOS $REPO"
+	fi
+    done
+done
+
+TEMP0=""
+TEMP1=""
+for REPO in $TEMP_REPOS
+do
+    FOUND=false
+    TEST=$( echo $REPO | sed 's/^link//' )
+    for LREPO in $MUSE_LINK_ORDER
+    do
+	[ "$TEST" == "$LREPO"  ] && FOUND=true
+    done
+    if [ "$FOUND" == "false" ]; then
+	if [[ ! "$REPO" =~ $linkReg ]]; then
+	    TEMP0="$TEMP0 $REPO"
+	else
+	    TEMP1="$TEMP1 $REPO"
+	fi
+    fi
+done
+export MUSE_REPOS="$TEMP0 $TEMP1 $MUSE_REPOS"
+
+
+if [ $MUSE_VERBOSE -gt 0 ]; then
+    echo "MUSE_LINK_ORDER=$MUSE_LINK_ORDER"
+    echo "MUSE_REPOS=$MUSE_REPOS"
+fi
+
+# finally done sorting the repos
+
+# reverse the order in order to build prepended path 
+MUSE_REPOS_REV=$( echo $MUSE_REPOS | awk '{for(i=1;i<=NF;i++) print $(NF-i+1)," "}' )
+
 
 #
 # set all the paths for the products in the build dir
 #
-for PP in $MUSE_REPOS
+for PP in $MUSE_REPOS_REV
 do
 
     # undo links to get to real path
-    # BASE=$(readlink -f  $MUSE_WORK_DIR/$PP/..)
-    BASE=$MUSE_WORK_DIR
-
-    BUILD=$BASE/build/$MUSE_STUB/$PP
+    # for links, this finds the build area that is on the disk 
+    # with that linked area
+    #BASE=$(readlink -f  $MUSE_WORK_DIR/$PP/..)
+    REPO=$(echo $PP | sed 's/^link\///' )
+    BUILD=$MUSE_WORK_DIR/build/$MUSE_STUB/$PP
 
     if [ $MUSE_VERBOSE -gt 0 ]; then
 	echo "Adding repo $PP to paths"
+	#echo "     BASE=$BASE"
+	echo "     BUILD=$BUILD"
     fi
 
-# add each package to SimpleConfig path
-    export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sf $BASE/$PP`
-# add each package source, and any generated fcl 
-    export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sf $BASE/$PP`
-    export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sf $BUILD`
-# libraries built in each package
-    export LD_LIBRARY_PATH=`dropit -p $LD_LIBRARY_PATH -sf $BUILD/lib`
-    export CET_PLUGIN_PATH=`dropit -p $CET_PLUGIN_PATH -sf $BUILD/lib`
-# bins build in each package
-    export PATH=`dropit -p $PATH -sf $BUILD/bin`
-    export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sf $BASE/$PP`
+    # add each package source to SimpleConfig path
+    export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/$PP`
+    # add each package source
+    export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/$PP`
 
-    if [ -f $PP/.muse ]; then
-
-	PATHS=$(cat $PP/.muse |  \
-	    awk '{if($1=="PYTHONPATH") print $2}')
-	for PA in $PATHS
-	do
-	    export PYTHONPATH=`dropit -p $PYTHONPATH -sf $BASE/$PP/$PA`
-	done
-
-	PATHS=$(cat $PP/.muse | \
-	    awk '{if($1=="PATH") print $2}')
-	for PA in $PATHS
-	do
-	    export PATH=`dropit -p $PATH -sf $BASE/$PP/$PA`
-	done
-
-	PATHS=$(cat $PP/.muse | \
-	    awk '{if($1=="FHICL_FILE_PATH") print $2}')
-	for PA in $PATHS
-	do
-	    export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sf $BASE/$PP/$PA`
-	done
-
-
+    # add package generated fcl 
+    if [[ "$REPO" == "Offline" ]]; then
+	# assuming only Offline generates fcl
+ 	export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $BUILD`
     fi
-    if [ "$PP" == "Offline" ]; then
-	export MU2E_BASE_RELEASE=$BASE/Offline
-    fi
+    # libraries built in each package
+    export LD_LIBRARY_PATH=`dropit -p $LD_LIBRARY_PATH -sfe $BUILD/lib`
+    export CET_PLUGIN_PATH=`dropit -p $CET_PLUGIN_PATH -sfe $BUILD/lib`
+    # bins build in each package
+    export PATH=`dropit -p $PATH -sfe $BUILD/bin`
+    # where root finds includes
+    export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/$PP`
+    
+    PATHS=$(cat $PP/.muse |  \
+	awk '{if($1=="PYTHONPATH") print $2}')
+    for PA in $PATHS
+    do
+	export PYTHONPATH=`dropit -p $PYTHONPATH -sf $MUSE_WORK_DIR/$PP/$PA`
+    done
+    
+    PATHS=$(cat $PP/.muse | \
+	awk '{if($1=="PATH") print $2}')
+    for PA in $PATHS
+    do
+	export PATH=`dropit -p $PATH -sf $MUSE_WORK_DIR/$PP/$PA`
+    done
+    
+    PATHS=$(cat $PP/.muse | \
+	awk '{if($1=="FHICL_FILE_PATH") print $2}')
+    for PA in $PATHS
+    do
+	export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sf $MUSE_WORK_DIR/$PP/$PA`
+    done
+    
+
+#    if [ "$PP" == "Offline" ]; then
+#	export MU2E_BASE_RELEASE=$BASE/Offline
+#    fi
+
 done
 
 #
 # set paths that start in the MUSE_WORK_DIR
-# and can be referred as Offline/JobConfig... or build/.../
+# and can be referred as Offline/JobConfig... or build/...
+# when the include files are shifted, these will be the only ones necessary
 #
+if [ -d link ]; then
+    export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/link` 
+    export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/link`
+    export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/link`
+fi
 export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR`
 export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR`
+    export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR`
 
-
-if [ $MUSE_VERBOSE -gt 0 ]; then
-  echo "MU2E_BASE_RELEASE=$MU2E_BASE_RELEASE"
-  echo "MU2E_SEARCH_PATH=$MU2E_SEARCH_PATH"
-  echo "FHICL_FILE_PATH=$FHICL_FILE_PATH"
-  echo "LD_LIBRARY_PATH="$(echo -n $LD_LIBRARY_PATH | tr ":" "\n")
-  echo "PATH="$(echo -n $PATH | tr ":" "\n")
-  echo "ROOT_INCLUDE_PATH=$ROOT_INCLUDE_PATH"
-fi
-
-
-
+[ $MUSE_VERBOSE -gt 0 ] && source museStatus.sh
 
 if [ $RC -ne 0  ]; then
     echo "ERROR - setup did not run correctly"
