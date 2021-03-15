@@ -190,7 +190,7 @@ def sconscriptList(mu2eOpts):
 # - the .os file will be left in the build dir
 # - the dict and lib now contain extra objects
 # so explicitly delete all files left in the build dir
-def extraCleanup():
+def extraCleanup(mu2eOpts):
     for top, dirs, files in os.walk(mu2eOpts['buildBase']):
         for name in files:
             ff =  os.path.join(top, name)

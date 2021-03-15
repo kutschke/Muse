@@ -15,8 +15,7 @@ museTarballUsage() {
     -h, --help  : print usage
     -t, --tmpdir : temp build space
     -e, --exportdir : landing directory for the tarball
-    -a, --all  : tar all builds, default is only the build for the current setup
-    -r, --release : release mode, save all code and .git
+    -r, --release : release mode, save all code, .git, and all builds
 
     <extras>
         extra files or directories to include in the tarball,
@@ -28,7 +27,7 @@ EOF
 
 
 # Parse arguments
-PARAMS="$(getopt -o ht:e:ar -l tmpdir,exportdir,all,release --name $(basename $0) -- "$@")"
+PARAMS="$(getopt -o ht:e:r -l tmpdir,exportdir,release --name $(basename $0) -- "$@")"
 if [ $? -ne 0 ]; then
     echo "ERROR - could not parsing tarball arguments"
     museTarballUsage
@@ -37,8 +36,8 @@ fi
 eval set -- "$PARAMS"
 
 TMPDIR=/mu2e/data/users/$USER/museTarball
-EXPORTDIR=/pnfs/mu2e/resilient/users/$USER/museTarball
-ALL=false
+EXPORTDIR=/mu2e/data/users/$USER/museTarball
+#EXPORTDIR=/pnfs/mu2e/resilient/users/$USER/museTarball
 RELEASE=false
 
 while true
@@ -47,10 +46,6 @@ do
         -h|--help)
             museTarballUsage
             exit 0
-            ;;
-        -a|--all)
-	    ALL=true
-            shift
             ;;
         -t|--tmpdir)
 	    TMPDIR="$2"
@@ -76,6 +71,8 @@ do
     esac
 done
 
+cd $MUSE_WORK_DIR
+
 # determine and make the directories
 mkdir -p $TMPDIR
 RC=$?
@@ -89,18 +86,18 @@ TMPDN=$( basename $TMPSDIR )
 EXPORTSDIR=$EXPORTDIR/$TMPDN
 TBALL=$TMPSDIR/Code.tar
 
+if [ "$TMPDIR" != "$EXPORTDIR" ]; then
 mkdir -p $EXPORTSDIR
 RC=$?
 if [ $RC -ne 0 ]; then
     echo "ERROR could not mkdir export dir $EXPORTSDIR"
     exit 1
 fi
-
+fi
 
 if [ $MUSE_VERBOSE -gt 0 ]; then
     echo "Temp dir TMPSDIR=$TMPSDIR"
     echo "Export dir EXPORTSDIR=$EXPORTSDIR"
-    echo "Include all builds: $ALL"
     echo "Release mode: $RELEASE"
     echo "Extra files: $EXTRAS"
 fi
@@ -113,12 +110,32 @@ FLAGS=" -rf $TBALL  -X $MUSE_DIR/config/tarExclude.txt "
 if [ "$RELEASE" == "false" ] ; then    # for grid tarball
     # also exclude *.cc and .git
     FLAGS=" $FLAGS  -X $MUSE_DIR/config/tarExcludeGrid.txt"
-    # put it in Code subdirectory
-    FLAGS=" $FLAGS  --transform=s|^|Code/| "
+    # put it in a Code subdirectory
+    FLAGS=" $FLAGS  --transform=s|^|Code/|   --transform=s|^Code//cvmfs|/cvmfs|  "
 fi
 
 # tar any extra files
 [ -n "$EXTRAS" ] &&  tar $FLAGS $EXTRAS
+
+if [ "$RELEASE" == "false" ] ; then    # for grid tarball
+    # create a fake setup.sh 
+    if [ -f "setup.sh" ]; then
+	mv setup.sh setup.sh-$(date +%s)
+    fi
+
+cat >> setup.sh <<EOF
+setup muse
+CODE_DIR=\$(dirname \$(readlink -f \$BASH_SOURCE))
+muse setup \$CODE_DIR -q $MUSE_BUILD $MUSE_COMPILER_E $MUSE_ENVSET $MUSE_OPTS
+EOF
+
+#    echo "setup muse" > setup.sh
+#    TEMP=" -q $MUSE_BUILD $MUSE_COMPILER_E $MUSE_ENVSET $MUSE_OPTS"
+#    echo "muse setup Code $TEMP " >> setup.sh
+
+    tar $FLAGS setup.sh
+    rm setup.sh
+fi
 
 # now the builds
 linkReg="^link/*"
@@ -138,7 +155,7 @@ do
 
     # now include the repo built parts
 
-    if [ "$ALL" == "true"  ]; then
+    if [ "$RELEASE" == "true"  ]; then
 	# take all existing builds
 	BUILDS=$(find build -mindepth 1 -maxdepth 1 -type d)
     else
@@ -149,18 +166,27 @@ do
     for BUILD in $BUILDS
     do
 	[ $MUSE_VERBOSE -gt 0 ] && echo tar $BUILD/$REPO
-	for BD in lib bin gen
-	do
-	    if [ -d $BUILD/$REPO/$BD ]; then
-		tar $FLAGS $FF $BUILD/$REPO/$BD
-	    fi
-	done
+	DD=$( readlink -f $BUILD/$REPO )  # expanded, true dir
+	if [[ "$DD" =~ $cvmfsReg ]]; then
+	    # just save the link
+	    tar $FLAGS $FF $BUILD/$REPO
+	else  
+	    for BD in lib bin gen
+	    do
+		if [ -d $BUILD/$REPO/$BD ]; then
+		    tar $FLAGS $FF $BUILD/$REPO/$BD
+		fi
+	    done
+	fi
     done
 done
 
 [ $MUSE_VERBOSE -gt 0 ] && echo "bzip"
 bzip2 $TBALL
-mv ${TBALL}.bz2 $EXPORTSDIR
+
+if [ "$TMPDIR" != "$EXPORTDIR"  ]; then
+    mv ${TBALL}.bz2 $EXPORTSDIR
+fi
 
 echo Tarball: $EXPORTSDIR/Code.tar.bz2
 
