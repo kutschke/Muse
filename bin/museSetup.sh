@@ -3,12 +3,45 @@
 # script to drive the muse command to setup and build Mu2e analysis repos
 #
 
-usageSetup() {
-  echo setup usage
+museSetupUsage() {
+    cat <<EOF
+ 
+    muse <global options> setup <directory>  <options>
+
+    <global options>
+    -v  : add verbosity
+    -h  : print usage
+
+    <directory>
+        If this is present, and is a directory path, then this will be 
+        set as the Muse working directory.  If not present, then 
+        use the default directory.
+
+    <options>
+    -q  :  add the following build options
+            prof/debug  - complier switches (default prof)
+            eNN - compiler, like "e20" (default by an algorithm)
+            pNNN/uNNN - environmental set, like "p020" (default by an algorithm)
+                 the following default to off:
+            ogl - link geant OGL graphics lib (default off)
+            qt - switch to geant libraries with qt graphics (default off)
+            st - compile with multi-threading flag off
+            trigger - build only libraries needed in the trigger
+
+           Options may be separated by a space or a colon
+
+    Example:
+    muse -v setup /mu2e/app/$USER/analysis -q debug
+
+EOF
+
   return
 }
 
-
+if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
+    museSetupUsage
+    return 0
+fi
 
 [ $MUSE_VERBOSE -gt 0 ] && echo "INFO - running museSetup with args: $@"
 
@@ -253,6 +286,8 @@ if [ $MUSE_VERBOSE -gt 0 ]; then
     echo MUSE_BUILD_DIR=$MUSE_BUILD_DIR
 fi
 
+export MU2E_UPS_QUALIFIERS=+${MUSE_COMPILER_E}:+${MUSE_BUILD}
+
 #
 # now set paths for Offline and the build
 #
@@ -420,4 +455,6 @@ if [ $RC -ne 0  ]; then
     return 1
 fi
 
+echo "     Build: $MUSE_BUILD     Core: $MUSE_FLAVOR $MUSE_COMPILER_E $MUSE_ENVSET     Options: $MUSE_OPTS"
 
+return 0

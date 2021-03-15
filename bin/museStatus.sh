@@ -22,6 +22,7 @@ if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
     exit 0
 fi
 
+cd $MUSE_WORK_DIR
 
 if [ -d build ]; then
     echo ""
@@ -58,12 +59,14 @@ echo "  MUSE_ENVSET = " $MUSE_ENVSET
 echo "  MUSE_ENVSET_DIR  = " $MUSE_ENVSET_DIR
 [ $MUSE_VERBOSE -gt 0 ] && echo "build directory stub based on the build options:"
 echo "  MUSE_STUB = " $MUSE_STUB
-[ $MUSE_VERBOSE -gt 0 ] && echo "the relative path to the build directory:"
-echo "  MUSE_BUILD_BASE = " $MUSE_BUILD_BASE
-[ $MUSE_VERBOSE -gt 0 ] && echo "full path to build dir:"
-echo "  MUSE_BUILD_DIR = " $MUSE_BUILD_DIR
+#[ $MUSE_VERBOSE -gt 0 ] && echo "the relative path to the build directory:"
+#echo "  MUSE_BUILD_BASE = " $MUSE_BUILD_BASE
+#[ $MUSE_VERBOSE -gt 0 ] && echo "full path to build dir:"
+#echo "  MUSE_BUILD_DIR = " $MUSE_BUILD_DIR
 [ $MUSE_VERBOSE -gt 0 ] && echo "location of Muse UPS product"
 echo "  MUSE_DIR = " $MUSE_DIR
+
+echo 
 
 [ $MUSE_VERBOSE -eq 0 ] && exit 0
 echo "build options:"
@@ -93,7 +96,5 @@ echo $PATH | tr ":" "\n"
 echo ""
 echo "ROOT_INCLUDE_PATH="
 echo $ROOT_INCLUDE_PATH | tr ":" "\n"
-
-echo ""
 
 exit 0

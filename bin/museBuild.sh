@@ -3,6 +3,8 @@
 # script to drive the muse command to build Mu2e analysis repos
 #
 
+cd $MUSE_WORK_DIR
+
 #
 # "build" the linked packages by making sure the links 
 # from our build area to the backing build area are there

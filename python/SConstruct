@@ -139,7 +139,7 @@ for sc in ss:
 #  with -c, scons will remove all dependant files it knows about.
 #  this code removes orphan files caused by a parent that was removed
 if ( GetOption('clean') and not COMMAND_LINE_TARGETS):
-    sch.extraCleanup()
+    sch.extraCleanup(mu2eOpts)
 
 
 # This tells emacs to view this file in python mode.

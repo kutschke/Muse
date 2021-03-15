@@ -13,15 +13,16 @@ museUsage() {
 
    global options:
      -v add verbosity
-     - h print help
+     -h print help
 
     action:
-       status - print status of setup
-       setup  - setup UPS products and path
-       build   - run scons
-       link   - link to packages in another build area
+       status    - print status of setup
+       setup     - setup UPS products and path
+       build      - run scons code build
+       link        - create a link to a package in another build area
+       tarball   - tar up build for grid or a release
 
-   To see actions options, add "-h" to the action
+   To see each actions options, add "-h" to the action
 
 EOF
 
@@ -74,11 +75,10 @@ if [ -z "$COMMAND" ]; then
     $DONE 1
 fi
 
-OWD=$PWD
 
 if [ "$COMMAND" == "setup" ]; then
 
-    #source $MUSE_DIR/bin/museSetup.sh "$@"
+    OWD=$PWD
     source museSetup.sh "$@"
     RC=$?
 
@@ -87,6 +87,7 @@ if [ "$COMMAND" == "setup" ]; then
 
 elif [ "$COMMAND" == "link" ]; then    
 
+    # this command must be run in the working dir
     $MUSE_DIR/bin/museLink.sh "$@"
     RC=$?
 
@@ -95,11 +96,9 @@ elif [ "$COMMAND" == "link" ]; then
 fi
 
 if [ -z "$MUSE_WORK_DIR" ]; then
-    echo "EROR - MUSE_WORK_DIR not set - muse setup must be run first"
+    echo "ERROR - MUSE_WORK_DIR not set - \"muse setup\" must be run first"
     $DONE 1
 fi
-
-cd $MUSE_WORK_DIR
 
 if [ "$COMMAND" == "build" ]; then    
 
@@ -118,11 +117,9 @@ elif [ "$COMMAND" == "tarball" ]; then
 
 else 
     echo "ERROR - unknown command  $COMMAND"
-    cd $OWD
     $DONE 1
 fi
 
-cd $OWD
 $DONE $RC
 
 
