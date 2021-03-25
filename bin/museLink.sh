@@ -100,12 +100,18 @@ if [ ! -d link ]; then
 fi
 
 LINK=link/$(basename $FTARGET)
+REPO=$( basename $LINK )
+
+if [ -e "$LINK" ]; then
+    echo "WARNING - replacing a linked package of the same name: $REPO "
+    rm -f $LINK
+fi
 
 ln -s $FTARGET $LINK
 
 if [ -n "$MUSE_WORK_DIR" ]; then
-    echo "WARNING - Muse is already already setup - adding links "
-    echo "           requires a new setup in a new process"
+    echo "WARNING - Muse is already setup - adding links changes paths.  "
+    echo "          You will need start a new process and run \"muse setup\" again. "
 fi
 
 exit 0
