@@ -13,21 +13,24 @@ echo "
    mgit command <args>
 
      A script to help with partial checkout of Offline repo.  It is necessary 
-  to use \"muse link\" to link to the backing build.  Then use \"mgit init\"
-  to start the partial checkout area.  
+  to use \"muse link\" to link to the backing build into your Muse working directory.  
+  Then use \"mgit init\" to start the partial checkout area.  Commands \"muse link\"
+  and \"mgit init\" must be run while in the Muse working directory, and the other
+  mgit commands must be run inside the Offline directory.
      When building only part of a repo locally, it is important to always be 
-  aware of how compatable the linked release is with your local modification.
+  aware of how compatable the linked release is with your local modifications.
   See the wiki for more information.
 
-  mgit init [user]
+  mgit init <git_username>
      start partial checkout.  This step will create the Mu2e remote, 
-     and your personal fork as a remote if you provide the username argument.
+     and your personal fork as a remote, if you provide the username argument.
   mgit status
-     See the status of the build area, including dependency issues
-  mgit add PACKAGE [PACKAGE]
+     see the status of the build area, including dependency issues
+  mgit add PACKAGE <PACKAGE ...>
      add the PACKAGE subdirectory
-  mgit rm PACKAGE [PACKAGE]
-     remove the PACKAGE subdirectory (requires \"muse build -c\")
+  mgit rm PACKAGE <PACKAGE ..>
+     remove the PACKAGE subdirectory (requires \"muse build -c\"
+     to remove the old build output files)
   mgit quit
      revert to non-sparse checkout (requires re-setup)
   mgit help
@@ -275,7 +278,7 @@ mg_quit() {
     local clean=$( mg_test_clean )
     if [ -n "$clean" ]; then
 	echo "ERROR mgit - you are in a working dir with $clean"
-	echo "     make your working area clean before running mgit init"
+	echo "     make your working area clean before running mgit quit"
 	return 1
     fi
 
@@ -289,7 +292,6 @@ mg_quit() {
     # leave the repo defined in case we want to go back to it
     #git config --unset mu2e.baserelease
 
-    echo "mgit - *** you must re-login, setup, and \"scons -c\" to correct your paths ***"
 }
 
 
@@ -306,8 +308,29 @@ fi
 
 CI_BASE=/cvmfs/mu2e-development.opensciencegrid.org/museCIBuild
 
+
 command="$1"
 shift
+
+if [ -z "$command" ]; then
+    echo -e "\nERROR - no command\n"
+    mg_help
+    return 1
+elif [ "$command" == "init" ]; then
+    if [[ -n "$MUSE_WORKING_DIR"  && "$PWD" != "$MUSE_WORKING_DIR" ]]; then
+	# if muse setup was run, the only reasonable place to run init is the working dir
+	echo -e "\nERROR - muse setup has been run, please cd to MUSE_WORKING_DIR to init\n"
+	return 1
+    fi
+elif [ "$command" != "help" ]; then
+    THISDIR=$( basename $PWD)
+    if [[ "$THISDIR"  != "Offline" || ! -d .git ]]; then
+	# all other commands are run in Offline directory
+	echo -e "\nERROR - mgit must be run in an Offline repo area\n"
+	return 1
+    fi
+fi
+
 
 case "$command" in
     init)
