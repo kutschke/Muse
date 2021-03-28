@@ -4,13 +4,21 @@
 #
 
 museStatusUsage() {
-    cat <<EOF EOF
+    cat <<EOF
  
-    muse <global options> status
+    muse <global options> status <command options>
+
+    Print information about the Muse working directory and how 
+    this process is setup.  If "muse setup" has not been run in 
+    this process, attempt to print some useful information 
+    assuming the default directory is the Muse working directory.
 
     <global options>
     -v  : add verbosity
-    -h  : print usage
+
+     <command options>
+    -h, --help  : print usage
+
 
 EOF
   return
@@ -22,7 +30,7 @@ if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
     exit 0
 fi
 
-cd $MUSE_WORK_DIR
+[ -n "$MUSE_WORK_DIR"  ] && cd $MUSE_WORK_DIR
 
 if [ -d build ]; then
     echo ""
@@ -30,9 +38,16 @@ if [ -d build ]; then
     DIRS=$(ls -1 build)
     for DIR in $DIRS; do
 	if [ "$DIR" == "$MUSE_STUB" ]; then
-	    echo  "     $DIR  ** this is your current setup **"
+	    echo  "     $DIR         ** this is your current setup **"
 	else
 	    echo  "     $DIR"
+	fi
+
+	echo -n "          Build times: "
+	if [ -e build/$DIR/.musebuild  ]; then
+	    echo "$(cat build/$DIR/.musebuild)"
+	else
+	    echo "   N/A"
 	fi
     done
     echo ""
@@ -42,6 +57,7 @@ else
     echo ""
 fi
 
+[ -z "$MUSE_WORK_DIR" ] && exit 0
 
 [ $MUSE_VERBOSE -gt 0 ] && echo "directory containing repos to be built:"
 echo "  MUSE_WORK_DIR = $MUSE_WORK_DIR "

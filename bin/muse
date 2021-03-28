@@ -85,13 +85,16 @@ if [ "$COMMAND" == "setup" ]; then
     cd $OWD
     $DONE $RC
 
+elif [ "$COMMAND" == "status" ]; then    
+
+    $MUSE_DIR/bin/museStatus.sh "$@"
+    $DONE $?
+
 elif [ "$COMMAND" == "link" ]; then    
 
     # this command must be run in the working dir
     $MUSE_DIR/bin/museLink.sh "$@"
-    RC=$?
-
-    $DONE $RC
+    $DONE $?
 
 fi
 
@@ -103,11 +106,6 @@ fi
 if [ "$COMMAND" == "build" ]; then    
 
     $MUSE_DIR/bin/museBuild.sh "$@"
-    RC=$?
-
-elif [ "$COMMAND" == "status" ]; then    
-
-    $MUSE_DIR/bin/museStatus.sh "$@"
     RC=$?
 
 elif [ "$COMMAND" == "tarball" ]; then    

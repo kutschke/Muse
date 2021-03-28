@@ -3,15 +3,19 @@
 # script to drive the muse command to setup and build Mu2e analysis repos
 #
 
-museTarballUsage() {
+usageMuseTarball() {
     cat <<EOF
  
-    muse <global options> tarball <command options> <extras>
+    muse <global options> tarball <options> <extras>
+
+     Make a tarball, ready to be submitted to the grid.  All locally built
+     products are tarred, areas on cvmfs are linked.  The tarball defaults to 
+     /mu2e/data/users/\$USER/museTarball/tmp.dir/Code.tar.bz2
 
     <global options>
     -v, --verbose  : add verbosity
 
-    <command options>
+    <options>
     -h, --help  : print usage
     -t, --tmpdir : temp build space
     -e, --exportdir : landing directory for the tarball
@@ -30,7 +34,7 @@ EOF
 PARAMS="$(getopt -o ht:e:r -l tmpdir,exportdir,release --name $(basename $0) -- "$@")"
 if [ $? -ne 0 ]; then
     echo "ERROR - could not parsing tarball arguments"
-    museTarballUsage
+    usageMuseTarball
     exit 1
 fi
 eval set -- "$PARAMS"
@@ -44,7 +48,7 @@ while true
 do
     case $1 in
         -h|--help)
-            museTarballUsage
+            usageMuseTarball
             exit 0
             ;;
         -t|--tmpdir)
@@ -65,7 +69,7 @@ do
             break
             ;;
         *)
-            museTarballUsage
+            usageMuseTarball
 	    break
             ;;
     esac
