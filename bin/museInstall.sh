@@ -34,7 +34,7 @@ mkdir -p $VERSION
 cd $VERSION
 
 rsync --exclude "*~" --exclude "*__*"  --exclude "museInstall.sh" \
-    -r $SDIR/bin $SDIR/python .
+    -r $SDIR/bin $SDIR/python  $SDIR/config .
 mkdir -p ups
 cd ups
 

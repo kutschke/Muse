@@ -4,10 +4,10 @@
 #  in another area to this area so it be used as input to the build
 #
 
-usageLink() {
+usageMuseLink() {
     cat <<EOF
 
-     muse link <repo selection>
+     muse link <repo selection> <options>
 
      Create a link to a repo in another Muse build area so that package
      can be included in the local build.  The linked package will be included in 
@@ -16,11 +16,11 @@ usageLink() {
       Since this command is usually run before "muse setup", 
       in must be run in the intended muse working directory
 
-      If the command is run without any arguments, a list
+      If the command is run without any arguments, or with -l, a list
       of suggested Offline backing builds will be shown
 
       <repo selection>
-           The path seelction can be presented three ways
+           The link selection can be presented three ways
        1) as a path to a repo in a muse working directory:
            muse link /mu2e/app/users/\$USER/myBaseBuild/Offline
        2) a branch/commit for a continuous integration backing build:
@@ -28,13 +28,16 @@ usageLink() {
        3) a published Offline tag:
            muse link v09_10_00
 
+       <options>
+       -h, --help  : print usage
+ 
 EOF
   return
 }
 
 
 if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
-    usageLink
+    usageMuseLink
     exit 0
 fi
 
@@ -47,9 +50,10 @@ TARGET="$1"
 # if no target, list cvmfs Offline
 #
 
-if [ -z "$TARGET" ]; then
+if [[ -z "$TARGET" || "$TARGET" == "-l"]]; then
 
     echo "Recent published releases:"
+    # add PUB area when ready
 
     echo "Recent CI builds"
     BRANCHES=$( ls $CI_BASE )
@@ -59,8 +63,6 @@ if [ -z "$TARGET" ]; then
 	    -printf "%TY-%Tm-%Td %TH:%TM %p\n" |   \
 	    sort -r | sed 's|'$CI_BASE/'||'
     done
-
-    # add PUB area when ready
 
     exit 0
 fi

@@ -10,15 +10,15 @@ museSetupUsage() {
 
     <global options>
     -v  : add verbosity
-    -h  : print usage
 
     <directory>
         If this is present, and is a directory path, then this will be 
         set as the Muse working directory.  If not present, then 
-        use the default directory.
+        the default directory is used as the Muse working directory.
 
     <options>
-    -q  :  add the following build options
+    -h, --help  : print usage 
+    -q  :  add the following build qualifiers
             prof/debug  - complier switches (default prof)
             eNN - compiler, like "e20" (default by an algorithm)
             pNNN/uNNN - environmental set, like "p020" (default by an algorithm)
@@ -29,9 +29,11 @@ museSetupUsage() {
             trigger - build only libraries needed in the trigger
 
            Options may be separated by a space or a colon
+ 
 
     Example:
-    muse -v setup /mu2e/app/$USER/analysis -q debug
+    muse setup  (if in the working directory)
+    muse -v setup /mu2e/app/users/$USER/analysis -q debug
 
 EOF
 
