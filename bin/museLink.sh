@@ -50,7 +50,7 @@ TARGET="$1"
 # if no target, list cvmfs Offline
 #
 
-if [[ -z "$TARGET" || "$TARGET" == "-l"]]; then
+if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
 
     echo "Recent published releases:"
     # add PUB area when ready
@@ -104,9 +104,12 @@ fi
 LINK=link/$(basename $FTARGET)
 REPO=$( basename $LINK )
 
-if [ -e "$LINK" ]; then
+if [ -L "$LINK" ]; then
     echo "WARNING - replacing a linked package of the same name: $REPO "
     rm -f $LINK
+    # also remove any links to the build area
+    # will be recreated pointing to the new area in the next setup
+    rm -f build/*/link/$REPO
 fi
 
 ln -s $FTARGET $LINK

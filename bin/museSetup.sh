@@ -452,6 +452,26 @@ export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR`
 export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR`
     export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR`
 
+#
+# "setup" the linked packages by making sure links exist
+# from our build area to the linked build area
+#
+if [ -d link ]; then
+    mkdir -p $MUSE_BUILD_BASE/link
+    for REPO in $( ls  link )
+    do
+	BASE=$( readlink -f  link/$REPO/.. )
+	if [ ! -d  $MUSE_BUILD_BASE/link/$REPO  ]; then
+	    if [ -d  $BASE/$MUSE_BUILD_BASE/$REPO ]; then
+		ln -s $BASE/$MUSE_BUILD_BASE/$REPO $MUSE_BUILD_BASE/link/$REPO  
+	    else
+		echo "WARNING - linked repo $REPO does not have the $MUSE_STUB build"
+	    fi
+	fi
+    done
+fi
+
+
 if [ $RC -ne 0  ]; then
     echo "ERROR - setup did not run correctly"
     return 1
