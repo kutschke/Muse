@@ -193,6 +193,7 @@ def sconscriptList(mu2eOpts):
 def extraCleanup(mu2eOpts):
     for top, dirs, files in os.walk(mu2eOpts['buildBase']):
         for name in files:
-            ff =  os.path.join(top, name)
-            print("removing file ", ff)
-            os.unlink (ff)
+            if name != ".musebuild":
+                ff =  os.path.join(top, name)
+                print("removing file ", ff)
+                os.unlink (ff)
