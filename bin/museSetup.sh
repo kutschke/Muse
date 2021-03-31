@@ -217,7 +217,7 @@ if [ -z "$MUSE_ENVSET" ]; then
 
     # take the latest from the env sets in the user area
 
-    WORD=$( find $MUSE_WORK_DIR -maxdepth 1  -type f  -regex ".*u[0-9]..$" -printf "%f\n" | sort | tail -1 )
+    WORD=$( find $MUSE_WORK_DIR/muse -maxdepth 1  -type f  -regex ".*u[0-9]..$" -printf "%f\n" | sort | tail -1 )
     if [ -n "$WORD" ]; then
 	export MUSE_ENVSET=$WORD
 	if [ $MUSE_VERBOSE -gt 0 ]; then 
@@ -251,8 +251,8 @@ if [ $MUSE_VERBOSE -gt 0 ]; then
 fi
 
 
-if [ -r $MUSE_WORK_DIR/$MUSE_ENVSET ]; then
-    source $MUSE_WORK_DIR/$MUSE_ENVSET
+if [ -r $MUSE_WORK_DIR/muse/$MUSE_ENVSET ]; then
+    source $MUSE_WORK_DIR/muse/$MUSE_ENVSET
     RC=$?
 elif [ -r $MUSE_ENVSET_DIR/$MUSE_ENVSET ]; then
     source $MUSE_ENVSET_DIR/$MUSE_ENVSET
@@ -299,8 +299,8 @@ export MU2E_SEARCH_PATH=$MU2E_DATA_PATH
 
 # define link order
 # use the local one if it exists
-if [ -f $MUSE_WORK_DIR/linkOrder ]; then
-    TEMP=$MUSE_WORK_DIR/linkOrder
+if [ -f $MUSE_WORK_DIR/muse/linkOrder ]; then
+    TEMP=$MUSE_WORK_DIR/muse/linkOrder
 else
     TEMP=$MUSE_ENVSET_DIR/linkOrder
 fi
@@ -319,7 +319,7 @@ linkReg="^link/*"
 
 #
 # the next 35 lines of code orders the repos according
-# 1) ABC before link/ABC (Offline takes link precendence over link/Offline)
+# 1) ABC before link/ABC (Offline takes link precedence over link/Offline)
 # 2) the linkOrder
 # 3) if the repo is not in the linkOrder, put it first
 #
