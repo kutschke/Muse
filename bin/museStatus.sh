@@ -32,6 +32,7 @@ fi
 
 [ -n "$MUSE_WORK_DIR"  ] && cd $MUSE_WORK_DIR
 
+FOUND=false
 if [ -d build ]; then
     echo ""
     echo "  existing builds:"
@@ -39,25 +40,32 @@ if [ -d build ]; then
     for DIR in $DIRS; do
 	if [ "$DIR" == "$MUSE_STUB" ]; then
 	    echo  "     $DIR         ** this is your current setup **"
+	    FOUND=true
 	else
 	    echo  "     $DIR"
 	fi
 
 	echo -n "          Build times: "
 	if [ -e build/$DIR/.musebuild  ]; then
-	    echo "$(cat build/$DIR/.musebuild)"
+	    cat build/$DIR/.musebuild
 	else
 	    echo "   N/A"
 	fi
     done
-    echo ""
 else
     echo ""
     echo "  no existing builds"
-    echo ""
 fi
 
+if [[ -n "$MUSE_STUB" && "$FOUND" == "false"  ]]; then
+    echo "  pesumptive build:"
+    echo "     $MUSE_STUB         ** this is your current setup **"
+fi
+echo ""
+
+
 [ -z "$MUSE_WORK_DIR" ] && exit 0
+
 
 [ $MUSE_VERBOSE -gt 0 ] && echo "directory containing repos to be built:"
 echo "  MUSE_WORK_DIR = $MUSE_WORK_DIR "
@@ -71,10 +79,10 @@ echo "  MUSE_VERBOSE = " $MUSE_VERBOSE
 echo "  MUSE_OPTS = " $MUSE_OPTS
 [ $MUSE_VERBOSE -gt 0 ] && echo "envset determines the UPS products to use:"
 echo "  MUSE_ENVSET = " $MUSE_ENVSET
-[ $MUSE_VERBOSE -gt 0 ] && echo "path to find sets of environmental setups:"
-echo "  MUSE_ENVSET_DIR  = " $MUSE_ENVSET_DIR
 [ $MUSE_VERBOSE -gt 0 ] && echo "build directory stub based on the build options:"
 echo "  MUSE_STUB = " $MUSE_STUB
+[ $MUSE_VERBOSE -gt 0 ] && echo "path to find sets of environmental setups:"
+echo "  MUSE_ENVSET_DIR  = " $MUSE_ENVSET_DIR
 #[ $MUSE_VERBOSE -gt 0 ] && echo "the relative path to the build directory:"
 #echo "  MUSE_BUILD_BASE = " $MUSE_BUILD_BASE
 #[ $MUSE_VERBOSE -gt 0 ] && echo "full path to build dir:"
