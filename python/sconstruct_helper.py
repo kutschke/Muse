@@ -79,6 +79,7 @@ def cppPath(mu2eOpts):
         os.environ['ART_ROOT_IO_INC'],
         os.environ['CANVAS_INC'],
         os.environ['BTRK_INC'],
+        os.environ['KINKAL_INC'],
         os.environ['MESSAGEFACILITY_INC'],
         os.environ['FHICLCPP_INC'],
         os.environ['HEP_CONCURRENCY_INC'],

@@ -98,24 +98,31 @@ mg_test_clean() {
 mg_init() {
     local USERNAME="$1"
 
-    if [ ! -d Offline ]; then
-	git init Offline || exit 1
+    CWD=$(basename $PWD)
+    if [[ "$CWD" == "Offline" ||  -d Offline ]]; then
+	echo "mgit - mgit can't turn an existing repo into a partial checkout"
+	exit 1
     fi
 
+
+    git init -b master Offline || exit 1
     cd Offline
+
+    echo "mgit - adding and fetching remote mu2e from: github/Mu2e"
     TEST=$( git remote -v | grep fetch | awk '{if($1=="mu2e") print $1}' )
     if [ -z "$TEST" ]; then
 	git remote add mu2e https://github.com/Mu2e/Offline || exit 1
     fi
 
-    git fetch mu2e || exit 1
+    git fetch -q mu2e || exit 1
 
     if [ -n "$USERNAME" ]; then
+	echo "mgit - adding and fetching remote origin from: github/$USERNAME"
 	TEST=$( git remote -v | grep fetch | awk '{if($1=="origin") print $1}' )
 	if [ -z "$TEST" ]; then
 	    git remote add origin git@github.com:${USERNAME}/Offline || exit 1
 	fi
-	git fetch origin || exit 1
+	git fetch -q origin || exit 1
     fi
 
     # save variables to .git/config
@@ -127,8 +134,9 @@ mg_init() {
     echo "/.gitignore" >>  .git/info/sparse-checkout
 #    echo "/site_scons" >>  .git/info/sparse-checkout
 
-    git checkout -b mgit_work mu2e/master || exit 1
-    git read-tree --reset -u HEAD || exit 1
+    #git checkout -b mgit_work mu2e/master || exit 1
+    #git read-tree --reset -u HEAD || exit 1
+    git read-tree --empty || exit 1
 
     return 0
 
@@ -225,7 +233,7 @@ mg_add() {
 	fi
     done
     
-    git checkout $BRANCH
+    git checkout -q $BRANCH
 
 }
 
@@ -264,9 +272,9 @@ mg_rm() {
     done
 
     # this acts on the change
-    git checkout $BRANCH
+    git checkout -q $BRANCH
 
-    echo "mgit - *** use \"muse build -c\" to remove build products from removed local source code ***"
+    echo "mgit - *** use \"muse build -c\" to remove build products from local build area ***"
 
 }
 
@@ -315,19 +323,19 @@ shift
 if [ -z "$command" ]; then
     echo -e "\nERROR - no command\n"
     mg_help
-    return 1
+    exit 1
 elif [ "$command" == "init" ]; then
     if [[ -n "$MUSE_WORKING_DIR"  && "$PWD" != "$MUSE_WORKING_DIR" ]]; then
 	# if muse setup was run, the only reasonable place to run init is the working dir
 	echo -e "\nERROR - muse setup has been run, please cd to MUSE_WORKING_DIR to init\n"
-	return 1
+	exit 1
     fi
 elif [ "$command" != "help" ]; then
     THISDIR=$( basename $PWD)
     if [[ "$THISDIR"  != "Offline" || ! -d .git ]]; then
 	# all other commands are run in Offline directory
 	echo -e "\nERROR - mgit must be run in an Offline repo area\n"
-	return 1
+	exit 1
     fi
 fi
 
@@ -356,4 +364,5 @@ case "$command" in
 	;;
 esac
 
+exit 0
 
