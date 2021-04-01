@@ -41,7 +41,6 @@ eval set -- "$PARAMS"
 
 TMPDIR=/mu2e/data/users/$USER/museTarball
 EXPORTDIR=/mu2e/data/users/$USER/museTarball
-#EXPORTDIR=/pnfs/mu2e/resilient/users/$USER/museTarball
 RELEASE=false
 
 while true
@@ -193,6 +192,24 @@ if [ "$TMPDIR" != "$EXPORTDIR"  ]; then
 fi
 
 echo Tarball: $EXPORTSDIR/Code.tar.bz2
+
+#
+# finally, give the user a warning if the tarball areas are filling up
+#
+
+SIZE=$( du -ms $TMPDIR | awk '{print $1}' )
+if [ $SIZE -gt 5000 ]; then
+    echo "WARNING - more than 5 GB in temp dir $TMPDIR" 
+fi
+if [ "$TMPDIR" != "$EXPORTDIR" ]; then
+    SIZE=$( du -ms $EXPORTDIR | awk '{print $1}' )
+    if [ $SIZE -gt 5000 ]; then
+	echo "WARNING - more than 5 GB in export dir $EXPORTDIR" 
+    fi
+fi
+
+#EXPORTDIR=/pnfs/mu2e/resilient/users/$USER/museTarball
+
 
 exit 0
 

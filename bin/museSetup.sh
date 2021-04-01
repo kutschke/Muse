@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -x
 #
 # script to drive the muse command to setup and build Mu2e analysis repos
 #
@@ -188,35 +188,39 @@ fi
 
 if [ -z "$MUSE_ENVSET" ]; then
     # look for a local recommendation in a package
-    DIRS=$( find $MUSE_WORK_DIR -maxdepth 1 -mindepth 1 -type d | sed 's|\./||'  |\
+    DIRS=$( find -L . ./link -maxdepth 2 -name .muse | sed -e 's|^\./||' -e 's|/\.muse$||'  |\
       awk '{if($1!="Offline" && $1!="link/Offline") print $0}'  )
-    # check these first
-    [ -d link/Offline ] && DIRS="link/Offline $DIRS"
-    [ -d Offline ] && DIRS="Offline $DIRS"
+    # put these in the front of the search list
+    [ -f link/Offline/.muse ] && DIRS="link/Offline $DIRS"
+    [ -f Offline/.muse ] && DIRS="Offline $DIRS"
 
+    WARN=false
     for DIR in $DIRS ; do
 
-	if [ -f $DIR/.muse ]; then
-	    WORD=$( cat $DIR/.muse | \
-		awk '{if($1=="ENVSET") print $2}' )
-	    if [ -n "$WORD" ]; then
-		export MUSE_ENVSET=$WORD
-		if [ $MUSE_VERBOSE -gt 0 ]; then 
-		    echo "INFO - using  environment $MUSE_ENVSET from" 
-		    echo "           \$MUSE_WORK_DIR/$DIR/.muse"
-		fi
-		break
+	WORD=$( cat $DIR/.muse | \
+	    awk '{if($1=="ENVSET") print $2}' )
+	if [[ -n "$WORD" && -z "$MUSE_ENVSET" ]]; then
+	    # take the first in this loop
+	    export MUSE_ENVSET=$WORD
+	    if [ $MUSE_VERBOSE -gt 0 ]; then 
+		echo "INFO - using  environment $MUSE_ENVSET from" 
+		echo "           \$MUSE_WORK_DIR/$DIR/.muse"
 	    fi
 	fi
+	[[ -n "$WORD" && -n "$MUSE_ENVSET" && "$WORD" != "$MUSE_ENVSET"  ]] && WARN=true
 
     done
 
+    if [ "$WARN" == "true" ]; then
+	echo "WARNING - local or linked packages have conflicting ENVSET recommendations"
+	echo "                 in .muse files.  Using $MUSE_ENVSET selected by search algorithm."
+    fi
+
 fi
 
-if [ -z "$MUSE_ENVSET" ]; then
+if [[ -z "$MUSE_ENVSET" && -d $MUSE_WORK_DIR/muse ]]; then
 
     # take the latest from the env sets in the user area
-
     WORD=$( find $MUSE_WORK_DIR/muse -maxdepth 1  -type f  -regex ".*u[0-9]..$" -printf "%f\n" | sort | tail -1 )
     if [ -n "$WORD" ]; then
 	export MUSE_ENVSET=$WORD

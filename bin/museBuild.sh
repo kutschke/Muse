@@ -35,6 +35,7 @@ fi
 
 cd $MUSE_WORK_DIR
 
+mkdir -p $MUSE_BUILD_DIR
 echo -n "$(date +'%D %H:%M:%S to ')" > $MUSE_BUILD_DIR/.musebuild
 
 
