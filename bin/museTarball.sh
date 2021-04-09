@@ -85,6 +85,7 @@ if [ $RC -ne 0 ]; then
 fi
 
 TMPSDIR=$( mktemp --directory  --tmpdir=$TMPDIR )
+chmod g+rx $TMPSDIR
 TMPDN=$( basename $TMPSDIR )
 EXPORTSDIR=$EXPORTDIR/$TMPDN
 TBALL=$TMPSDIR/Code.tar
