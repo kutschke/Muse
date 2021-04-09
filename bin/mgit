@@ -44,7 +44,7 @@ echo "
 # get current branch
 #
 mg_branch() {
-    git status -b | awk '{if(NR==1) print $3}'
+    git status -b | grep "On branch" | awk '{print $3}'
 }
 
 #
@@ -84,31 +84,22 @@ mg_test_clean() {
 
 #
 # init the partial checkout directory
-# use cases:
-# 1 no existing Offline
-# 2 Offline exists, in full checkout
-#   a) repo requested
-#   b) no repo requested, has stored backing repo
-#   c) no repo requested, no stored
-# 3 Offline exists in partial checkout
-#   a) repo requested, same as current
-#   b) repo requested, not same as current
-#   c) no repo requested
 #
 mg_init() {
     local USERNAME="$1"
 
     CWD=$(basename $PWD)
-    if [[ "$CWD" == "Offline" ||  -d Offline ]]; then
-	echo "mgit - mgit can't turn an existing repo into a partial checkout"
-	exit 1
+    if [ "$CWD" == "Offline" ]; then
+	echo "mgit - in existing Offline"
+    elif [  -d Offline ]; then
+	echo "mgit - found existing Offline"
+	cd Offline
+    else
+	git init -b master Offline || exit 1
+	cd Offline
     fi
 
-
-    git init -b master Offline || exit 1
-    cd Offline
-
-    echo "mgit - adding and fetching remote mu2e from: github/Mu2e"
+    echo "mgit - checking/adding/fetching remote mu2e from: github/Mu2e"
     TEST=$( git remote -v | grep fetch | awk '{if($1=="mu2e") print $1}' )
     if [ -z "$TEST" ]; then
 	git remote add mu2e https://github.com/Mu2e/Offline || exit 1
@@ -117,7 +108,7 @@ mg_init() {
     git fetch -q mu2e || exit 1
 
     if [ -n "$USERNAME" ]; then
-	echo "mgit - adding and fetching remote origin from: github/$USERNAME"
+	echo "mgit - checking/adding/fetching remote origin from: github/$USERNAME"
 	TEST=$( git remote -v | grep fetch | awk '{if($1=="origin") print $1}' )
 	if [ -z "$TEST" ]; then
 	    git remote add origin git@github.com:${USERNAME}/Offline || exit 1
@@ -127,16 +118,19 @@ mg_init() {
 
     # save variables to .git/config
     git config core.sparsecheckout true
-    #git config mu2e.baserelease $base_repo
 
     # what to check out initially
     echo "/.muse" >  .git/info/sparse-checkout
     echo "/.gitignore" >>  .git/info/sparse-checkout
-#    echo "/site_scons" >>  .git/info/sparse-checkout
 
-    #git checkout -b mgit_work mu2e/master || exit 1
-    #git read-tree --reset -u HEAD || exit 1
-    git read-tree --empty || exit 1
+    local branch=$( mg_branch )
+    if [ -n "$branch" ] ; then
+	git checkout $branch || exit 1
+    else
+	git checkout --no-track -b mgit_init_branch mu2e/master || exit 1
+    fi
+    git read-tree --reset -u HEAD || exit 1
+    #git read-tree --empty || exit 1
 
     return 0
 
@@ -145,72 +139,72 @@ mg_init() {
 
 
 #
-# check the local rel against the base
+# check the local status against the repo and the backing build
 #
 mg_status() {
 
-    echo " status function not implemented yet"
 
-#    local branch=$( mg_branch )
-#    echo "mgit - fetching..."
-#    git fetch
-#
-#    local base_repo=$( git config mu2e.baserelease )
-#    if [ -z $base_repo  ]; then
-#	echo "mgit - WARNING - did not detect a base release, can't check much - "
-#	echo "         you probably want to run mgit init?"
-#    else
-#	local hash=$( git rev-parse origin/$branch | cut -c 1-8 )
-#	cwd=$PWD
-#	cd $base_repo
-#	local basehash=$( git rev-parse origin/$branch | cut -c 1-8 )
-#	cd $cwd
-#	if [ "$basehash" != "$hash"  ]; then
-#	    echo "mgit - WARNING - your base release is at $basehash "
-#	    "    but the head  of branch $branch is at $hash"
-#	    "    your working area may be fatally out of sync with your base"
-#	    
-#	fi
-#
-#	local depfile=$base_repo/../deps.txt
-#	dirs=$(cat $depfile | grep HDR | awk '{print $2}')
-#	local deps=""
-#	local ndir=0
-#	for dir in $dirs
-#	do
-#	    if [ -d $dir ]; then
-#		
-#		# see what depends on this checked-out dir
-#		while read line
-#		do
-#		    if [[ "$line" =~ "HDR" ]]; then
-#			local temp=$( echo $line | awk '{x=0; for(i=3; i<=NF; i++) {if($i=="'$dir'") x=1;} if(x==1) print $2; }' )
-#		    fi
-#		    if [ "$temp" != "$dir" ]; then
-#			deps="$deps $temp"
-#		    fi
-#		done < $depfile
-#
-#		deps=$( echo $deps $temp | tr " " "\n" | sort -u  )
-#		ndir=$(($ndir + 1))
-#	    fi
-#	done
-#	if [ -z "$deps"  ]; then
-#	    echo "mgit - did not find any directories dependent on your $ndir checked-out directories"	    
-#	else
-#	    echo "mgit - WARNING - the following set of Offline directories"
-#	    echo " depend on your local checked-out header files. If you modify"
-#	    echo " a local header file, the base release will be inconsistent."
-#	    echo " You can \"mgit add\" these to your local area,"
-#	    echo " \"mgit quit\" partial checkout, or analyze and take your chances... "
-#	    echo " " 
-#	    echo $deps
-#	    echo " " 
-#	fi
-#    fi
-#
-#    git status
+    if [ ! -d $MUSE_WORK_DIR/link/Offline ]; then
+	echo "mgit ERROR - could not find backing release in \$MUSE_WORK_DIR/link/Offline"
+	exit 1
+    fi
 
+    local branch=$( mg_branch )
+    echo "mgit - fetching..."
+    git fetch
+
+    # the backing build hash
+    local bline=$( git -C $MUSE_WORK_DIR/link/Offline show --format=format:"%h %d" )
+    local bhash=$( echo $bline | awk '{print $1}' )
+    local bbranch=$( echo $bline | awk -F, '{print $2}' | awk '{print $1}' )
+    # the head of the backing build branch
+    local hhash=$( git show --format=format:"%h" $bbranch )
+
+    echo "   current branch is $branch"
+    echo "   backing build is hash $bhash of $bbranch"
+    echo "   head of $bbranch is hash $hhash"
+    local nn=$( git rev-list --count  ${bhash}..${hhash} )
+    if [ $nn -gt 0 ]; then
+	echo "mgit - WARNING - your backing build is not up to date"
+	echo "   The head of $bbranch is $nn commits ahead of your backing build"
+	echo "   if you merge the head of $bbranch locally, the local code may be"
+	echo "   fatally inconsistent with the backing build"
+    fi
+
+    local packages=$( cat .git/info/sparse-checkout | sed -e 's|^/||' -e 's/\n//g' )
+    echo "mgit - you have these packages checked out locally:"
+    echo
+    echo $packages
+    echo
+
+    local depfile=$MUSE_BUILD_DIR/link/Offline/gen/txt/deps.txt
+    if [ ! -f $depfile  ]; then
+	echo "mgit - WARNING - cannot find deps.txt, cannot analyze local dependencies"
+	return 1
+    fi
+
+    deps=""
+    for pp in $packages
+    do
+	temp=$( cat $depfile | awk -v pp=$pp '{if($1="HDR") {   for(i=3;i<=NF; i++) {if($i==pp) print $2;}} } ' )
+	[ -n "$temp" ] && deps="$deps $temp"
+    done
+    if [ -z "$deps"  ]; then
+	echo "mgit - did not find any directories dependent on your checked-out directories"
+    else
+	echo "mgit - WARNING - the following set of Offline directories"
+	echo "   depend on your local checked-out header files. If you modify"
+	echo "   a local header file, the backing build will be inconsistent."
+	echo "   You can \"mgit add\" these to your local area,"
+	echo "   \"mgit quit\" partial checkout, or analyze and take your chances... "
+	echo
+	echo $deps
+	echo
+    fi
+    echo "mgit - standard git status:"
+    git status
+
+    return 0
 }
 
 
@@ -255,10 +249,6 @@ mg_rm() {
 		    echo "          - stash or reset and try again"
 		    continue
 		fi
-
-		# in order for the dir to go away, all 
-		# untracked files must be gone
-		#find $DD -name "*.os" -delete
 
 	    else
 		echo "mgit - directory $DD was not found locally"
