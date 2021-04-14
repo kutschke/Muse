@@ -399,42 +399,46 @@ do
     fi
 
     # add each package source to SimpleConfig path
-    export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/$PP`
-    # add each package source
-    export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/$PP`
+    export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/$PP )
+    # add each package fcl
+    if [ -z "$FHICL_FILE_PATH" ] ; then
+	export FHICL_FILE_PATH="$MUSE_WORK_DIR/$PP"
+    else
+	export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/$PP )
+    fi
 
     # add package generated fcl 
     if [[ "$REPO" == "Offline" ]]; then
 	# assuming only Offline generates fcl
- 	export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $BUILD`
+ 	export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $BUILD )
     fi
     # libraries built in each package
-    export LD_LIBRARY_PATH=`dropit -p $LD_LIBRARY_PATH -sfe $BUILD/lib`
-    export CET_PLUGIN_PATH=`dropit -p $CET_PLUGIN_PATH -sfe $BUILD/lib`
+    export LD_LIBRARY_PATH=$( dropit -p $LD_LIBRARY_PATH -sfe $BUILD/lib )
+    export CET_PLUGIN_PATH=$( dropit -p $CET_PLUGIN_PATH -sfe $BUILD/lib )
     # bins build in each package
-    export PATH=`dropit -p $PATH -sfe $BUILD/bin`
+    export PATH=$( dropit -p $PATH -sfe $BUILD/bin )
     # where root finds includes
-    export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/$PP`
+    export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/$PP )
     
     PATHS=$(cat $PP/.muse |  \
 	awk '{if($1=="PYTHONPATH") print $2}')
     for PA in $PATHS
     do
-	export PYTHONPATH=`dropit -p $PYTHONPATH -sf $MUSE_WORK_DIR/$PP/$PA`
+	export PYTHONPATH=$( dropit -p $PYTHONPATH -sf $MUSE_WORK_DIR/$PP/$PA )
     done
     
     PATHS=$(cat $PP/.muse | \
 	awk '{if($1=="PATH") print $2}')
     for PA in $PATHS
     do
-	export PATH=`dropit -p $PATH -sf $MUSE_WORK_DIR/$PP/$PA`
+	export PATH=$( dropit -p $PATH -sf $MUSE_WORK_DIR/$PP/$PA )
     done
     
     PATHS=$(cat $PP/.muse | \
 	awk '{if($1=="FHICL_FILE_PATH") print $2}')
     for PA in $PATHS
     do
-	export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sf $MUSE_WORK_DIR/$PP/$PA`
+	export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sf $MUSE_WORK_DIR/$PP/$PA )
     done
     
 
@@ -450,13 +454,13 @@ done
 # when the include files are shifted, these will be the only ones necessary
 #
 if [ -d link ]; then
-    export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/link` 
-    export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/link`
-    export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/link`
+    export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/link ) 
+    export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/link )
+    export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/link )
 fi
-export MU2E_SEARCH_PATH=`dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR`
-export FHICL_FILE_PATH=`dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR`
-    export ROOT_INCLUDE_PATH=`dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR`
+export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR )
+export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR )
+    export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR )
 
 #
 # "setup" the linked packages by making sure links exist
