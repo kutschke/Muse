@@ -87,8 +87,10 @@ def cppPath(mu2eOpts):
         os.environ['CETLIB_INC'],
         os.environ['CETLIB_EXCEPT_INC'],
         os.environ['BOOST_INC'],
-        os.environ['CLHEP_INC'],
-        os.environ['CPPUNIT_DIR']+'/include',
+        os.environ['CLHEP_INC'] ]
+    if 'CPPUNIT_DIR' in os.environ:
+            path = path + [ os.environ['CPPUNIT_DIR']+'/include' ]
+    path = path + [
         os.environ['HEPPDT_INC'],
         os.environ['ROOT_INC'],
         os.environ['XERCES_C_INC'],
