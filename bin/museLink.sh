@@ -80,7 +80,7 @@ FTARGET="no_final_target"
 if [[ "$TARGET" =~ $pubreg  ]]; then
     [ $MUSE_VERBOSE -gt 0 ] && echo "would do published Offline $TARGET"
     # must be a full path
-    FTARGET=cant_do_pub_$TARGET
+    FTARGET=$MUSINGS/Offline/$TARGET/Offline
 elif [ -d $CI_BASE/$TARGET/Offline ]; then
     FTARGET=$CI_BASE/$TARGET/Offline
 elif [ -d "$TARGET" ]; then
