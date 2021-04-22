@@ -42,7 +42,7 @@ if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
 fi
 
 CI_BASE=/cvmfs/mu2e-development.opensciencegrid.org/museCIBuild
-#PUB_BASE=/cvmfs/mu2e.opensciencegrid.org/...
+MUSINGS=/cvmfs/mu2e.opensciencegrid.org/Musings
 
 TARGET="$1"
 
@@ -52,10 +52,11 @@ TARGET="$1"
 
 if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
 
-    echo "Recent published releases:"
+    echo "Recent published Offline releases:"
     # add PUB area when ready
+    ls -tr $MUSINGS/Offline | tail -5
 
-    echo "Recent CI builds"
+    echo "Recent Offline CI builds"
     BRANCHES=$( ls $CI_BASE )
     for BRANCH in $BRANCHES
     do

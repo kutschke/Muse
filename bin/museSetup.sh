@@ -61,19 +61,45 @@ fi
 # determine the working dir, and MUSE_WORK_DIR
 #
 
+ARG1=""
+ARG2=""
 if [[ -n "$1" && "$1" != "-q" ]]; then
-    if [  ! -d "$1"  ]; then
-	echo "ERROR - could not find Muse directory $1"
+    ARG1="$1"
+    shift
+fi
+if [[ -n "$1" && "$1" != "-q" ]]; then
+    ARG2="$1"
+    shift
+fi
+
+if [ -z "$ARG1" ]; then
+    # if no args, then assume the local dir is the Muse working dir
+    export MUSE_WORK_DIR=$( readlink -f $PWD)
+else
+    MUSINGS=/cvmfs/mu2e.opensciencegrid.org/Musings
+    if [  -d "$ARG1"  ]; then
+	# if the first arg is a directory, accept that as Muse working dir
+	# readlink removes links
+	export MUSE_WORK_DIR=$( readlink -f $ARG1)
+    elif [  -d "$MUSINGS/$ARG1"  ]; then
+	# second choice, if the first arg is a Musings dir
+	if [  -n "$ARG2"  ]; then
+	    # try to interpret arg2 as a Musings version number
+	    if [ -d "$MUSINGS/$ARG1/$ARG2" ]; then
+		export MUSE_WORK_DIR=$MUSINGS/$ARG1/$ARG2
+	    fi
+	else
+	    # no Musings version, look for a current
+	    if [  -d "$MUSINGS/$ARG1/current" ]; then
+		export MUSE_WORK_DIR=$( readlink -f $MUSINGS/$ARG1/current )
+	    fi
+	fi
+    fi
+    if [ -z "$MUSE_WORK_DIR" ]; then
+	echo "ERROR - could not find/interpret directory arguments: $ARG1 $ARG2"	
 	return 1
     fi
-    # readlink removes links
-    export MUSE_WORK_DIR=$(readlink -f $1)
-    
-    # remove the target dir from args
-    shift
 
-else
-    export MUSE_WORK_DIR=$(readlink -f $PWD)
 fi
 
 [ $MUSE_VERBOSE -gt 0 ] && \

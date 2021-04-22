@@ -19,7 +19,8 @@ usageMuseTarball() {
     -h, --help  : print usage
     -t, --tmpdir : temp build space
     -e, --exportdir : landing directory for the tarball
-    -r, --release : release mode, save all code, .git, and all builds
+    -r, --release SUBDIR : release mode, save all code, .git, and all builds
+          ex: --release Offline/v00_00_00 or -r ProdJob/v1_0_0test
 
     <extras>
         extra files or directories to include in the tarball,
@@ -31,7 +32,7 @@ EOF
 
 
 # Parse arguments
-PARAMS="$(getopt -o ht:e:r -l tmpdir,exportdir,release --name $(basename $0) -- "$@")"
+PARAMS="$(getopt -o ht:e:r: -l tmpdir,exportdir,release --name $(basename $0) -- "$@")"
 if [ $? -ne 0 ]; then
     echo "ERROR - could not parsing tarball arguments"
     usageMuseTarball
@@ -56,11 +57,16 @@ do
             ;;
         -e|--exportdir)
 	    EXPORTDIR="$2"
-            shift
+            shift 2
             ;;
         -r|--release)
 	    RELEASE=true
-            shift
+	    VSUBDIR="$2"
+	    if [ -z "$VSUBDIR" ]; then
+		echo "ERROR - no version number supplied with release"
+		exit 1
+	    fi
+            shift 2
             ;;
         --)
             shift
@@ -88,7 +94,12 @@ TMPSDIR=$( mktemp --directory  --tmpdir=$TMPDIR )
 chmod g+rx $TMPSDIR
 TMPDN=$( basename $TMPSDIR )
 EXPORTSDIR=$EXPORTDIR/$TMPDN
-TBALL=$TMPSDIR/Code.tar
+if [ "$RELEASE" == "true" ] ; then
+    TNAME=$(echo $VSUBDIR | sed -e 's|/v|-|' -e 's|_|\.|g' )-${MUSE_STUB}.tar
+else
+    TNAME=Code.tar
+fi
+TBALL=$TMPSDIR/$TNAME
 
 if [ "$TMPDIR" != "$EXPORTDIR" ]; then
 mkdir -p $EXPORTSDIR
@@ -114,7 +125,10 @@ cvmfsReg="^/cvmfs/*"
 tar -cf $TBALL -T /dev/null
 # write to this tarball and do basic excludes like tmp areas
 FLAGS=" -rf $TBALL  -X $MUSE_DIR/config/tarExclude.txt "
-if [ "$RELEASE" == "false" ] ; then    # for grid tarball
+if [ "$RELEASE" == "true" ] ; then
+    # put the area under the VSUBDIR
+    FLAGS=" $FLAGS  --transform=s|^|$VSUBDIR/|   --transform=s|^$VSUBDIR//cvmfs|/cvmfs|  "
+else   # for grid tarball
     # also exclude *.cc and .git
     FLAGS=" $FLAGS  -X $MUSE_DIR/config/tarExcludeGrid.txt"
     # put it in a Code subdirectory
@@ -152,43 +166,51 @@ fi
 
 
 #
-# if this tarball is for the grid, add a setup file
+# add a setup files, one for default setup, one in the build subdir
+# the latter allows a setup with options
 #
 
-if [ "$RELEASE" == "false" ] ; then    # for grid tarball
-    # create a fake setup.sh 
-    if [ -f "setup.sh" ]; then
-	mv setup.sh setup.sh-$(date +%s)
-    fi
+# there is one here by chance, it might be the user's so save it
+if [ -f "setup.sh" ]; then
+    mv setup.sh setup.sh-$(date +%s)
+fi
 
-    # figure out the ops that are needed explicitly in the setup
-    USE_OPTS="$MUSE_OPTS"
-    [[ ! "$USE_OPTS" =~ "$MUSE_BUILD" ]] && USE_OPTS="$MUSE_BUILD $USE_OPTS"
-    [[ ! "$USE_OPTS" =~ "$MUSE_COMPILER_E" ]] && USE_OPTS="$MUSE_COMPILER_E $USE_OPTS"
-    [[ ! "$USE_OPTS" =~ "$MUSE_ENVSET" ]] && USE_OPTS="$MUSE_ENVSET $USE_OPTS"
+# figure out the ops that are needed explicitly in the setup
+USE_OPTS="$MUSE_OPTS"
+[[ ! "$USE_OPTS" =~ "$MUSE_BUILD" ]] && USE_OPTS="$MUSE_BUILD $USE_OPTS"
+[[ ! "$USE_OPTS" =~ "$MUSE_COMPILER_E" ]] && USE_OPTS="$MUSE_COMPILER_E $USE_OPTS"
+[[ ! "$USE_OPTS" =~ "$MUSE_ENVSET" ]] && USE_OPTS="$MUSE_ENVSET $USE_OPTS"
 
-    #
-    # this is the file that the grid job will source
-    #
+#
+# this is the file that the grid job will source
+#
+if [ "$RELEASE" == "true"  ]; then
+    # the build can have a default (no  expllcit opts)
+    # or respond to opts defined in the setup.sh in the build subdirectories
+    OPTTEXT="\$MUSE_SETUP_USE_OPTS"
+else
+    # for a grid job, write only one setup file with current opts
+    OPTTEXT="$USE_OPTS"
+fi
 
 cat >> setup.sh <<EOF
 CODE_DIR=\$(dirname \$(readlink -f \$BASH_SOURCE))
 [ -f \$CODE_DIR/setup_pre.sh ] && source \$CODE_DIR/setup_pre.sh
 $PRODPATH
 setup muse
-muse setup \$CODE_DIR -q $USE_OPTS
+muse setup \$CODE_DIR -q $OPTTEXT
 RC=\$?
 [ -f \$CODE_DIR/setup_post.sh ] && source \$CODE_DIR/setup_post.sh
 return \$RC
 EOF
 
-    tar $FLAGS setup.sh
-    rm setup.sh
+tar $FLAGS setup.sh
+rm setup.sh
 
-    # allow user scripts before and after the "muse setup"
-    [ -f setup_pre.sh ] && tar $FLAGS setup_pre.sh
-    [ -f setup_post.sh ] && tar $FLAGS setup_post.sh
-fi
+# allow user scripts before and after the "muse setup"
+[ -f setup_pre.sh ] && tar $FLAGS setup_pre.sh
+[ -f setup_post.sh ] && tar $FLAGS setup_post.sh
+
 
 # if muse directory exists, include it
 [ -d muse ] && tar $FLAGS muse
@@ -237,6 +259,23 @@ do
     done
 done
 
+
+if [ "$RELEASE" == "true"  ]; then
+    for BUILD in $BUILDS
+    do
+	OPTTEXT=$( echo $BUILD | awk -F/  '{print $2}' | awk -F- '{for(i=2;i<=NF;i++) printf "%s ", $i }')
+	cat >> $BUILD/setup.sh <<EOF
+export MUSE_SETUP_USE_OPTS="$OPTTEXT"
+BUILD_DIR=\$(dirname \$(readlink -f \$BASH_SOURCE))
+source \$BUILD_DIR/../../setup.sh
+EOF
+
+        tar $FLAGS $BUILD/setup.sh
+        rm -f $BUILD/setup.sh
+    done
+fi
+
+
 [ $MUSE_VERBOSE -gt 0 ] && echo "bzip"
 bzip2 $TBALL
 
@@ -244,7 +283,7 @@ if [ "$TMPDIR" != "$EXPORTDIR"  ]; then
     mv ${TBALL}.bz2 $EXPORTSDIR
 fi
 
-echo Tarball: $EXPORTSDIR/Code.tar.bz2
+echo Tarball: $EXPORTSDIR/${TNAME}.bz2
 
 #
 # finally, give the user a warning if the tarball areas are filling up
