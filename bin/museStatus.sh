@@ -83,10 +83,8 @@ echo "  MUSE_ENVSET = " $MUSE_ENVSET
 echo "  MUSE_STUB = " $MUSE_STUB
 [ $MUSE_VERBOSE -gt 0 ] && echo "path to find sets of environmental setups:"
 echo "  MUSE_ENVSET_DIR  = " $MUSE_ENVSET_DIR
-#[ $MUSE_VERBOSE -gt 0 ] && echo "the relative path to the build directory:"
-#echo "  MUSE_BUILD_BASE = " $MUSE_BUILD_BASE
-#[ $MUSE_VERBOSE -gt 0 ] && echo "full path to build dir:"
-#echo "  MUSE_BUILD_DIR = " $MUSE_BUILD_DIR
+[ $MUSE_VERBOSE -gt 0 ] && echo "the grid setup file (if any):"
+echo "  MUSE_GRID_SETUP = " $MUSE_GRID_SETUP
 [ $MUSE_VERBOSE -gt 0 ] && echo "location of Muse UPS product"
 echo "  MUSE_DIR = " $MUSE_DIR
 

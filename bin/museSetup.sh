@@ -507,6 +507,17 @@ if [ -d link ]; then
     done
 fi
 
+#
+# if the build area is on cvmfs and contains a setup.sh script, typically written
+# by the tarball command, then set the grid convenience environmental
+#
+cvmfsReg="^/cvmfs/*"
+ if [[ "$MUSE_BUILD_DIR" =~ $cvmfsReg ]]; then
+     if [ -f $MUSE_BUILD_DIR/setup.sh ] ; then
+	 export MUSE_GRID_SETUP=$MUSE_BUILD_DIR/setup.sh
+     fi
+fi
+
 
 if [ $RC -ne 0  ]; then
     echo "ERROR - setup did not run correctly"
