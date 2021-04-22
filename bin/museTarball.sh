@@ -95,7 +95,15 @@ chmod g+rx $TMPSDIR
 TMPDN=$( basename $TMPSDIR )
 EXPORTSDIR=$EXPORTDIR/$TMPDN
 if [ "$RELEASE" == "true" ] ; then
-    TNAME=$(echo $VSUBDIR | sed -e 's|/v|-|' -e 's|_|\.|g' )-${MUSE_STUB}.tar
+    P2=$(echo $VSUBDIR | awk -F/ '{print $2}' )
+    pubreg="^v[0-9,_]*+$"
+    # if this is a normal version number, then form tarball name 
+    # like ups standard, otherwise take it literally
+    if [[ "$P2" =~ $pubreg ]]; then
+	TNAME=$(echo $VSUBDIR | sed -e 's|/v|-|' -e 's|_|\.|g' )-${MUSE_STUB}.tar
+    else
+	TNAME=$(echo $VSUBDIR | sed -e 's|/|-|')-${MUSE_STUB}.tar
+    fi
 else
     TNAME=Code.tar
 fi

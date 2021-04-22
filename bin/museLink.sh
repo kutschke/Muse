@@ -20,13 +20,27 @@ usageMuseLink() {
       of suggested Offline backing builds will be shown
 
       <repo selection>
-           The link selection can be presented three ways
+           The link selection can be presented various ways
        1) as a path to a repo in a muse working directory:
            muse link /mu2e/app/users/\$USER/myBaseBuild/Offline
        2) a branch/commit for a continuous integration backing build:
            muse link master/c2409d93
        3) a published Offline tag:
            muse link v09_10_00
+               or
+           muse link Offline v09_10_00
+               or
+            muse link Offline (where the current verison will be used)
+       4) any other published Musings repo and tag:
+           muse link Production MDC2020a
+               or
+           muse link Production (where the current verison will be used)
+
+       Note: A link is to a repo, not another Muse working directory.
+       You cannot link a Musing that is not a single-repo build.  For example,
+       if Musings X contains repos Y and Z, then \"muse link X\" will fail. 
+       if Musing X contains repo X, then \"muse link X\" will suceed.  
+       
 
        <options>
        -h, --help  : print usage
@@ -45,6 +59,7 @@ CI_BASE=/cvmfs/mu2e-development.opensciencegrid.org/museCIBuild
 MUSINGS=/cvmfs/mu2e.opensciencegrid.org/Musings
 
 TARGET="$1"
+VERSION="$2"
 
 #
 # if no target, list cvmfs Offline
@@ -52,11 +67,11 @@ TARGET="$1"
 
 if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
 
-    echo "Recent published Offline releases:"
-    # add PUB area when ready
-    ls -tr $MUSINGS/Offline | tail -5
+    echo "  Recent published Offline releases:"
+    CC=$( basename $( readlink -f $MUSINGS/Offline/current ) )
+    ls -tr $MUSINGS/Offline | grep -v current | tail -5 | sed "s/$CC/$CC   (current)/"
 
-    echo "Recent Offline CI builds"
+    echo "  Recent Offline CI builds"
     BRANCHES=$( ls $CI_BASE )
     for BRANCH in $BRANCHES
     do
@@ -68,23 +83,29 @@ if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
     exit 0
 fi
 
-
 #
-# we are assuming that the user specified the target relative 
-# to the working dir, if a relative path
+# try to interpret the target 
 #
 
 pubreg="^v[0-9,_]*+$"
 FTARGET="no_final_target"
+NWORD=$(echo $TARGET | awk -F/ '{print NF}')
 
 if [[ "$TARGET" =~ $pubreg  ]]; then
-    [ $MUSE_VERBOSE -gt 0 ] && echo "would do published Offline $TARGET"
+    # then the first arg was just a verison number, 
+    # assume that the intended Musing is Offline
+    [ $MUSE_VERBOSE -gt 0 ] && echo "linking published Offline $TARGET"
     # must be a full path
     FTARGET=$MUSINGS/Offline/$TARGET/Offline
 elif [ -d $CI_BASE/$TARGET/Offline ]; then
+    # the target matched a CI build directory
     FTARGET=$CI_BASE/$TARGET/Offline
-elif [ -d "$TARGET" ]; then
-
+    [ $MUSE_VERBOSE -gt 0 ] && echo "linking CI build Offline $TARGET"
+elif [[ -d "$TARGET" &&  $NWORD -ne 1 ]]; then
+    # the target is a local directory
+    # the second clause is necessary because "muse link X"
+    # might be issued in an area with a local X dir, 
+    # and we would never link that - it is already active
     reg="^/.*"
     if [[ ! "$TARGET"  =~ $reg  ]]; then
 	# if target was a relative path, then account for the link subdir
@@ -92,7 +113,15 @@ elif [ -d "$TARGET" ]; then
     else
 	FTARGET="$TARGET"
     fi
-
+    [ $MUSE_VERBOSE -gt 0 ] && echo "linking local directory $TARGET"
+elif [[ -n "$VERSION" &&  -d $MUSINGS/$TARGET/$VERSION/$TARGET ]]; then
+    # requested musing and version
+    FTARGET=$MUSINGS/$TARGET/$VERSION/$TARGET
+    [ $MUSE_VERBOSE -gt 0 ] && echo "linking published Musing $TARGET $VERSION"
+elif [[ -n "$TARGET" &&  -d $MUSINGS/$TARGET/current ]]; then
+    # requested current Musing
+    FTARGET=$( readlink -f $MUSINGS/$TARGET/current/$TARGET )
+    [ $MUSE_VERBOSE -gt 0 ] && echo "linking Musing $TARGET current"
 else
     echo "ERROR - target could not be parsed: $TARGET"
     exit 1
