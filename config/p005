@@ -1,6 +1,6 @@
 
 # the lines starting with two hashes are documentation which can be printed
-## 4/14/2021 updating  art_root_io v1_07_00 (art v3_08_00, s107)
+## 4/28/2021 p003 (art v3_06_03) with updating KinKal to v0.1.6
 
 #
 # use preferred build type, if none requested
@@ -26,24 +26,16 @@ fi
 # use preferred python flag, if none requested
 #
 if [ -z "$MUSE_PYTHON" ]; then
-    export MUSE_PYTHON=p392
+    export MUSE_PYTHON=p383b
     if [ $MUSE_VERBOSE -gt 0 ]; then 
         echo "INFO - MUSE_PYTHON defaulting to $MUSE_PYTHON in $MUSE_ENVSET"
     fi
 fi
 
-
-# build tools
-setup cetpkgsupport v1_14_01
-setup -B  cetbuildtools   v8_03_03
-setup -B  valgrind   v3_16_1 
-setup -B  cmake   v3_19_6 
-
 # art 
-# these three lines must be coordinated
-setup -B art_root_io v1_07_00 -q${MUSE_BUILD}:+${MUSE_COMPILER_E}
-export MUSE_ART=s107
-setup -B  gallery   v1_18_00  -q+${MUSE_BUILD}:+${MUSE_COMPILER_E}
+# these two lines must be coordinated
+setup -B art_root_io v1_05_01 -q${MUSE_BUILD}:+${MUSE_COMPILER_E}
+export MUSE_ART=s105
 
 
 #
@@ -60,24 +52,30 @@ if [ "$MUSE_G4VIS" == "qt" ]; then
    GFLAGS=${GFLAGS}:+qt
 fi
 
-setup -B geant4 v4_10_7_p01c -q${GFLAGS}
+setup -B geant4 v4_10_6_p02b -q${GFLAGS}
 
 #
 # everything else
 #
 
 setup -B xerces_c v3_2_3   -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}
-setup -B mu2e_artdaq_core v1_05_07 -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_ART}
+setup -B mu2e_artdaq_core v1_05_06b -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_ART}
 setup -B heppdt   v03_04_02 -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}
-setup -B BTrk   v1_02_31  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_PYTHON}
-setup -B KinKal  v00_01_05a  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_PYTHON}
+setup -B BTrk   v1_02_30  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_PYTHON}
+setup -B KinKal  v00_01_06  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_PYTHON}
 setup -B cry   v1_7n  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}
 setup -B gsl v2_6a
 setup curl v7_64_1
 setup cryptopp v08_02_00 -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}
-setup -B scons v3_1_2a  -q +${MUSE_PYTHON}
-setup -B gdb v10_1
+setup -B scons v3_1_2  -q +${MUSE_PYTHON}
+setup -B gdb v9_2
 
+
+setup -B  gallery   v1_16_01  -q+${MUSE_BUILD}:+${MUSE_COMPILER_E}
+#setup -B  ifdhc   v2_5_8  -q  e20:p383b:prof
+setup -B  cetbuildtools   v7_17_01  
+setup -B  valgrind   v3_16_1 
+setup -B  cmake   v3_17_3 
 
 # Local Variables:
 # mode: sh
