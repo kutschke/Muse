@@ -70,7 +70,7 @@ setup -B xerces_c v3_2_3   -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}
 setup -B mu2e_artdaq_core v1_05_07 -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_ART}
 setup -B heppdt   v03_04_02 -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}
 setup -B BTrk   v1_02_31  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_PYTHON}
-setup -B KinKal  v00_01_05a  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_PYTHON}
+setup -B KinKal  v00_01_06  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}:+${MUSE_PYTHON}
 setup -B cry   v1_7n  -q +${MUSE_BUILD}:+${MUSE_COMPILER_E}
 setup -B gsl v2_6a
 setup curl v7_64_1
