@@ -44,7 +44,10 @@ class mu2e_helper:
         self.libdir = self.buildBase+'/'+self.repo+'/lib'
         self.bindir = self.buildBase+'/'+self.repo+'/bin'
         # change string Offline/dir/subdir/src to dir_subdir
-        self.libstub = '_'.join(tokens[1:])
+        if self.repo == "Offline" :
+            self.libstub = "mu2e_"+'_'.join(tokens[1:])
+        else:
+            self.libstub = self.repo.lower()+'_'.join(tokens[1:])
 
         # A few places we use ClassDef in order to enable a class
         # to be fully capable at the root prompt
@@ -58,26 +61,26 @@ class mu2e_helper:
         self.classdef = tf
 
     def lib_link_name(self):
-        return "mu2e_"+self.libstub
+        return self.libstub
     def lib_file(self):
-        return self.libdir+"/libmu2e_"+self.libstub+".so"
+        return self.libdir+"/lib"+self.libstub+".so"
     def plugin_lib_file(self,sourcename):
         stub = sourcename[:sourcename.find('.cc')] # file name minus the .cc
-        return self.libdir+'/libmu2e_'+self.libstub + '_' + stub +".so"
+        return self.libdir+"/lib"+self.libstub + '_' + stub +".so"
     def dict_file(self):
-        return self.dictdir+"/mu2e_"+self.libstub + '_dict.cpp'
+        return self.dictdir+"/"+self.libstub + '_dict.cpp'
     def dict_lib_file(self):
         if self.classdef : # dictionary is in the main lib
-            return self.libdir+"/libmu2e_"+self.libstub + '.so'
+            return self.libdir+"/lib"+self.libstub + '.so'
         else :  # dictionary is in its own lib
-            return self.libdir+"/libmu2e_"+self.libstub + '_dict.so'
+            return self.libdir+"/lib"+self.libstub + '_dict.so'
     def rootmap_file(self):
-        return self.libdir+"/libmu2e_"+self.libstub + "_dict.rootmap"
+        return self.libdir+"/lib"+self.libstub + "_dict.rootmap"
     def pcm_file(self):
         if self.classdef : # dictionary is in the main lib
-            return self.libdir+"/libmu2e_"+self.libstub + "_rdict.pcm"
+            return self.libdir+"/lib"+self.libstub + "_rdict.pcm"
         else :  # dictionary is in its own lib
-            return self.libdir+"/libmu2e_"+self.libstub + "_dict_rdict.pcm"
+            return self.libdir+"/lib"+self.libstub + "_dict_rdict.pcm"
 
     #
     #   Build a list of plugins to be built.
