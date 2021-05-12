@@ -217,6 +217,11 @@ mg_add() {
     for DD in $@
     do
 	SDD="/$DD"
+	NN=$(git ls-files $DD | wc -l)
+	if [ $NN -le 0 ]; then
+	    echo "Warning - \"git ls-files\" found zero files in this subdirectory"
+	    echo "   If this was a typo, you can \"mgit rm $DD\""
+	fi
 	if [[ "$DD" =~ "/" ]]; then
 	    echo "mgit - add target connot contain '/' - skipping"
 	elif grep -q $SDD .git/info/sparse-checkout ; then
@@ -312,7 +317,7 @@ shift
 
 if [ -z "$command" ]; then
     echo -e "\nERROR - no command\n"
-    mg_help
+    mg_usage
     exit 1
 elif [ "$command" == "init" ]; then
     if [[ -n "$MUSE_WORKING_DIR"  && "$PWD" != "$MUSE_WORKING_DIR" ]]; then
@@ -320,7 +325,7 @@ elif [ "$command" == "init" ]; then
 	echo -e "\nERROR - muse setup has been run, please cd to MUSE_WORKING_DIR to init\n"
 	exit 1
     fi
-elif [ "$command" != "help" ]; then
+elif [[ "$command" != "help" && "$command" != "-h" && "$command" != "--help" ]]; then
     THISDIR=$( basename $PWD)
     if [[ "$THISDIR"  != "Offline" || ! -d .git ]]; then
 	# all other commands are run in Offline directory
@@ -346,7 +351,7 @@ case "$command" in
     status)
 	mg_status $@
 	;;
-    help)
+    help | "-h" | "--help" )
 	mg_usage $@
 	;;
     *)
