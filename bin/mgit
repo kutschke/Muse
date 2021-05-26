@@ -26,6 +26,8 @@ echo "
      and your personal fork as a remote, if you provide the username argument.
   mgit status
      see the status of the build area, including dependency issues
+  mgit list
+     list the subdirectories of Offline which can be added locally
   mgit add PACKAGE <PACKAGE ...>
      add the PACKAGE subdirectory
   mgit rm PACKAGE <PACKAGE ..>
@@ -73,8 +75,7 @@ mg_test_clean() {
 
     # check for unpushed commits
     local branch=$( mg_branch )
-    local test3=$( git diff --shortstat origin/${branch}..HEAD )
-    #echo $branch $test3 > s.txt
+    local test3=$( git log --branches --not --remotes )
     if [ -n "$test3" ]; then
 	[ -n "$ret" ] && ret="${ret},"
 	ret="${ret}unpushed commits"
@@ -124,13 +125,16 @@ mg_init() {
     echo "/.gitignore" >>  .git/info/sparse-checkout
 
     local branch=$( mg_branch )
-    if [ -n "$branch" ] ; then
+
+    # if you default to master, it doesn't point to a commit so you can't check it out
+    local goodbranch=true
+    [[ -z "$branch" || -z "$(git branch -al $branch)" ]] && goodbranch=false
+    if [ "$goodbranch" == "true" ] ; then
 	git checkout $branch || exit 1
     else
 	git checkout --no-track -b mgit_init_branch mu2e/master || exit 1
     fi
     git read-tree --reset -u HEAD || exit 1
-    #git read-tree --empty || exit 1
 
     return 0
 
@@ -205,6 +209,16 @@ mg_status() {
     git status
 
     return 0
+}
+
+
+#
+# list packages you could add
+#
+mg_list() {
+
+    git ls-files $DD | awk -F '/' '{print $1}' | sort | uniq
+
 }
 
 
@@ -338,6 +352,9 @@ fi
 case "$command" in
     init)
 	mg_init $@
+	;;
+    list)
+	mg_list $@
 	;;
     add)
 	mg_add $@
