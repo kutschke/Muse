@@ -40,13 +40,37 @@ EOF
   return
 }
 
+#
+# print error messages, cleanup from a early error if possible
+#
+errorMessageBad() {
+    echo "        the environment may be broken, please try again in a new shell"
+    export MUSE_ERROR="yes"
+}
+errorMessage() {
+    local WORDS=$( printenv | tr "=" " " | awk '{if(index($1,"MUSE_")==1) print $1}')
+    for WORD in $WORDS
+    do
+	if [[ "$WORD" != "MUSE_DIR" && "$WORD" != "MUSE_ENVSET_DIR" ]]; then
+	    unset $WORD
+	fi
+    done
+    echo "        environment is clean, try again in this shell"
+}
+
+
+[ $MUSE_VERBOSE -gt 0 ] && echo "INFO - running museSetup with args: $@"
+
 if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
     museSetupUsage
     return 0
 fi
 
-[ $MUSE_VERBOSE -gt 0 ] && echo "INFO - running museSetup with args: $@"
-
+if [ -n "$MUSE_ERROR" ]; then
+    echo "ERROR - Muse setup was incomplete "
+    errorMessageBad
+    return 1
+fi
 
 if [ -n "$MUSE_WORK_DIR" ]; then
     echo "ERROR - Muse already setup for directory "
@@ -97,6 +121,7 @@ else
     fi
     if [ -z "$MUSE_WORK_DIR" ]; then
 	echo "ERROR - could not find/interpret directory arguments: $ARG1 $ARG2"	
+	errorMessage
 	return 1
     fi
 
@@ -119,6 +144,7 @@ cd $MUSE_WORK_DIR
 
 if ! which ups >& /dev/null ; then
     echo "ERROR - could not find ups command, please setup mu2e"
+    errorMessage
     return 1
 fi
 
@@ -175,6 +201,7 @@ do
 	export MUSE_ENVSET=$WORD
     else
 	echo "ERROR - museSetup could not parse $WORD"
+	errorMessage
 	return 1
     fi
 done
@@ -274,6 +301,7 @@ fi
 
 if [ -z "$MUSE_ENVSET"  ]; then
     echo "ERROR - did not find any env set"
+    errorMessage
     return 1
 fi
 
@@ -281,7 +309,6 @@ fi
 if [ $MUSE_VERBOSE -gt 0 ]; then 
     echo "INFO - running environmental set $MUSE_ENVSET " 
 fi
-
 
 if [ -r $MUSE_WORK_DIR/muse/$MUSE_ENVSET ]; then
     source $MUSE_WORK_DIR/muse/$MUSE_ENVSET
@@ -291,11 +318,13 @@ elif [ -r $MUSE_ENVSET_DIR/$MUSE_ENVSET ]; then
     RC=$?
 else
     echo "ERROR - did not find env set $MUSE_ENVSET"
-    RC=1
+    errorMessage
+    return 1
 fi
 
-if [ -z "$MUSE_BUILD"  ]; then
-    echo "ERROR - executing env set did not set build"
+if [[ -z "$MUSE_BUILD"  || $RC -ne 0 ]]; then
+    echo "ERROR - env set did not execute correctly"
+    errorMessageBad
     return 1
 fi
 
@@ -486,7 +515,7 @@ if [ -d link ]; then
 fi
 export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR )
 export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR )
-    export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR )
+export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR )
 
 #
 # "setup" the linked packages by making sure links exist
@@ -502,6 +531,7 @@ if [ -d link ]; then
 		ln -s $BASE/$MUSE_BUILD_BASE/$REPO $MUSE_BUILD_BASE/link/$REPO  
 	    else
 		echo "WARNING - linked repo $REPO does not have the $MUSE_STUB build"
+		echo "                   probably nothing useful can be done in this state"
 	    fi
 	fi
     done
@@ -518,11 +548,6 @@ cvmfsReg="^/cvmfs/*"
      fi
 fi
 
-
-if [ $RC -ne 0  ]; then
-    echo "ERROR - setup did not run correctly"
-    return 1
-fi
 
 echo "     Build: $MUSE_BUILD     Core: $MUSE_FLAVOR $MUSE_COMPILER_E $MUSE_ENVSET     Options: $MUSE_OPTS"
 
