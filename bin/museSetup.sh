@@ -366,7 +366,7 @@ else
     TEMP=$MUSE_ENVSET_DIR/linkOrder
 fi
 # end up with a list of words like: Tutorial Offline
-export MUSE_LINK_ORDER=$(cat $TEMP | sed 's/#.*$//' )
+export MUSE_LINK_ORDER=$(cat $TEMP | awk 'substr($0,0,1) != "#" {print}' | sed 's/#.*$//' )
 
 
 # list of local muse packages
