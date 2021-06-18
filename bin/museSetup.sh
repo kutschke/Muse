@@ -15,6 +15,8 @@ museSetupUsage() {
         If this is present, and is a directory path, then this will be 
         set as the Muse working directory.  If not present, then 
         the default directory is used as the Muse working directory.
+        Some Muse builds are published on cvmfs (Musings), and you can setup 
+        Muse to point to those areas.
 
     <options>
     -h, --help  : print usage 
@@ -32,8 +34,15 @@ museSetupUsage() {
  
 
     Example:
-    muse setup  (if in the working directory)
+    muse setup  (if in the Muse working directory)
     muse -v setup /mu2e/app/users/$USER/analysis -q debug
+
+    Musings examples:
+    muse setup Offline  (setup the current publishd Offline tag)
+    muse setup Offline v10_00_00  (setup this version of Offline)
+    muse setup ProdJob  (setup current version of ProdJob - Offline and Production)
+    muse setup v10_00_00  (build defaults to Offline)
+
 
 EOF
 
@@ -44,7 +53,7 @@ EOF
 # print error messages, cleanup from a early error if possible
 #
 errorMessageBad() {
-    echo "        the environment may be broken, please try again in a new shell"
+    echo "        The environment may be broken, please try again in a new shell"
     export MUSE_ERROR="yes"
 }
 errorMessage() {
@@ -55,7 +64,7 @@ errorMessage() {
 	    unset $WORD
 	fi
     done
-    echo "        environment is clean, try again in this shell"
+    echo "        The environment is clean, try again in this shell"
 }
 
 
@@ -118,6 +127,9 @@ else
 		export MUSE_WORK_DIR=$( readlink -f $MUSINGS/$ARG1/current )
 	    fi
 	fi
+    elif [  -d "$MUSINGS/Offline/$ARG1"  ]; then
+	# there is one arg, and it is an available Offline version
+	export MUSE_WORK_DIR=$( readlink -f $MUSINGS/Offline/$ARG1 )
     fi
     if [ -z "$MUSE_WORK_DIR" ]; then
 	echo "ERROR - could not find/interpret directory arguments: $ARG1 $ARG2"	
@@ -137,6 +149,16 @@ fi
 OWD=$PWD
 cd $MUSE_WORK_DIR
 
+#
+# if there is a.git in the working dir, stop since, almost 100% certain, 
+# the user is trying to setup in Offline dir
+#
+if [ -d .git ] ; then
+    echo "ERROR - \$MUSE_WORK_DIR contains .git.  Are you trying to setup inside of"
+    echo "        Offline or other repo instead of the directory which contains them?"
+    errorMessage
+    return 1
+fi
 
 #
 # set the flavor string
@@ -318,6 +340,11 @@ elif [ -r $MUSE_ENVSET_DIR/$MUSE_ENVSET ]; then
     RC=$?
 else
     echo "ERROR - did not find env set $MUSE_ENVSET"
+    # regex for version strings like u000
+    reu="^u[0-9]{3}$"
+    if [[ "$MUSE_ENVSET" =~ $reu ]]; then
+	echo "        local env sets of the form uNNN should be placed in \$MUSE_WORK_DIR/muse"
+    fi
     errorMessage
     return 1
 fi
@@ -366,7 +393,7 @@ else
     TEMP=$MUSE_ENVSET_DIR/linkOrder
 fi
 # end up with a list of words like: Tutorial Offline
-export MUSE_LINK_ORDER=$(cat $TEMP | awk 'substr($0,0,1) != "#" {print}' | sed 's/#.*$//' )
+export MUSE_LINK_ORDER=$(cat $TEMP | sed 's/#.*$//' | tr "\n\t" "  " | tr -s " " )
 
 
 # list of local muse packages
