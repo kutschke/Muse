@@ -25,13 +25,15 @@ usageMuseLink() {
            muse link /mu2e/app/users/\$USER/myBaseBuild/Offline
        2) a branch/commit for a continuous integration backing build:
            muse link master/c2409d93
-       3) a published Offline tag:
+       3) the latest master commit from continuous integration
+           muse link HEAD
+       4) a published Offline tag:
            muse link v09_10_00
                or
            muse link Offline v09_10_00
                or
             muse link Offline (where the current verison will be used)
-       4) any other published Musings repo and tag:
+       5) any other published Musings repo and tag:
            muse link Production MDC2020a
                or
            muse link Production (where the current verison will be used)
@@ -90,8 +92,13 @@ fi
 pubreg="^v[0-9,_]*+$"
 FTARGET="no_final_target"
 NWORD=$(echo $TARGET | awk -F/ '{print NF}')
+PRINTCURRENT="no"
 
-if [[ "$TARGET" =~ $pubreg  ]]; then
+if [[ "$TARGET" == "HEAD" ||  "$TARGET" == "head" ]]; then
+    LASTHASH=$(ls -1tr $CI_BASE/master | tail -1)
+    FTARGET=$CI_BASE/master/$LASTHASH/Offline
+    [ $MUSE_VERBOSE -gt 0 ] && echo "linking CI build Offline master/$LASTHASH"
+elif [[ "$TARGET" =~ $pubreg  ]]; then
     # then the first arg was just a verison number, 
     # assume that the intended Musing is Offline
     [ $MUSE_VERBOSE -gt 0 ] && echo "linking published Offline $TARGET"
@@ -116,16 +123,25 @@ elif [[ -d "$TARGET" &&  $NWORD -ne 1 ]]; then
     [ $MUSE_VERBOSE -gt 0 ] && echo "linking local directory $TARGET"
 elif [[ -n "$VERSION" &&  -d $MUSINGS/$TARGET/$VERSION/$TARGET ]]; then
     # requested musing and version
-    FTARGET=$MUSINGS/$TARGET/$VERSION/$TARGET
+    # have to use readlink in case version was "current"
+    FTARGET=$( readlink -f $MUSINGS/$TARGET/$VERSION/$TARGET )
     [ $MUSE_VERBOSE -gt 0 ] && echo "linking published Musing $TARGET $VERSION"
+    [ "$VERSION" == "current" ] && PRINTCURRENT="yes"
 elif [[ -n "$TARGET" &&  -d $MUSINGS/$TARGET/current ]]; then
     # requested current Musing
     FTARGET=$( readlink -f $MUSINGS/$TARGET/current/$TARGET )
     [ $MUSE_VERBOSE -gt 0 ] && echo "linking Musing $TARGET current"
+    PRINTCURRENT="yes"
 else
     echo "ERROR - target could not be parsed: $TARGET"
     exit 1
 fi
+
+if [ "$PRINTCURRENT" == "yes"  ]; then
+    TEMPV=$(echo $FTARGET | awk -F/ '{print $(NF-1)}' )
+    echo "    $TARGET \"current\" points to $TEMPV"
+fi
+
 
 if [ ! -d link ]; then
     mkdir link

@@ -252,17 +252,16 @@ do
     for BUILD in $BUILDS
     do
 	[ $MUSE_VERBOSE -gt 0 ] && echo tar $BUILD/$REPO
+	if [ ! -d $BUILD/$REPO ]; then
+	    echo "ERROR - $BUILD/$REPO does not exist, was it built?"
+	    exit 1
+	fi
 	DD=$( readlink -f $BUILD/$REPO )  # expanded, true dir
 	if [[ "$DD" =~ $cvmfsReg ]]; then
 	    # just save the link
 	    tar $FLAGS $FF $BUILD/$REPO
 	else  
-	    for BD in lib bin gen
-	    do
-		if [ -d $BUILD/$REPO/$BD ]; then
-		    tar $FLAGS $FF $BUILD/$REPO/$BD
-		fi
-	    done
+	    tar $FLAGS $FF --exclude=$BUILD/$REPO/tmp $BUILD/$REPO
 	fi
     done
 done

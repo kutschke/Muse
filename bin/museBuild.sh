@@ -36,8 +36,22 @@ fi
 cd $MUSE_WORK_DIR
 
 mkdir -p $MUSE_BUILD_DIR
+RC=$?
+if [ $RC -ne 0 ]; then
+    echo "ERROR - could not execute: mkdir -p $MUSE_BUILD_DIR"
+    exit $RC
+fi
 echo -n "$(date +'%D %H:%M:%S to ')" > $MUSE_BUILD_DIR/.musebuild
 
+#
+# make a repo directory in the build area for each repo
+# this is used to indicate the repos were built even if it 
+# produces no files in the build area during the scons build
+#
+for REPO in $MUSE_REPOS
+do
+    mkdir -p $MUSE_BUILD_DIR/$REPO
+done
 
 #
 # now run the local build
