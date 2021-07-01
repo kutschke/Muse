@@ -42,6 +42,7 @@ museSetupUsage() {
     muse setup Offline v10_00_00  (setup this version of Offline)
     muse setup ProdJob  (setup current version of ProdJob - Offline and Production)
     muse setup v10_00_00  (build defaults to Offline)
+    muse setup HEAD setup latest CI build
 
 
 EOF
@@ -110,6 +111,7 @@ if [ -z "$ARG1" ]; then
     export MUSE_WORK_DIR=$( readlink -f $PWD)
 else
     MUSINGS=/cvmfs/mu2e.opensciencegrid.org/Musings
+    CI_BASE=/cvmfs/mu2e-development.opensciencegrid.org/museCIBuild
     if [  -d "$ARG1"  ]; then
 	# if the first arg is a directory, accept that as Muse working dir
 	# readlink removes links
@@ -130,6 +132,13 @@ else
     elif [  -d "$MUSINGS/Offline/$ARG1"  ]; then
 	# there is one arg, and it is an available Offline version
 	export MUSE_WORK_DIR=$( readlink -f $MUSINGS/Offline/$ARG1 )
+    elif [[  "$ARG1" == "HEAD" || "$ARG1" == "head" ]]; then
+	# take the latest master CI
+	HASH=$(ls -tr $CI_BASE/master | tail -1)
+	export MUSE_WORK_DIR=$( readlink -f $CI_BASE/master/$HASH )
+    elif [ -d $CI_BASE/$ARG1 ]; then
+	# use the requested CI build
+	export MUSE_WORK_DIR=$( readlink -f $CI_BASE/$ARG1 )
     fi
     if [ -z "$MUSE_WORK_DIR" ]; then
 	echo "ERROR - could not find/interpret directory arguments: $ARG1 $ARG2"	
