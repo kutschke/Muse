@@ -137,6 +137,8 @@ museTest_full(){
 		echo "[$(date)] setup $TAR failed RC=$RC"
 		exit 1
 	    fi
+
+	    muse status
 	    
 	    echo "Running ceSimReco in $TAR"
 	    mu2e -n 10 -c Production/Validation/ceSimReco.fcl >& $TAR/ceSimReco.log
