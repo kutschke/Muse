@@ -66,8 +66,14 @@ museTest_full(){
 	    exit 1
 	fi
 
+	if [ ! -d /mu2e/data/users/$USER ]; then
+	    TARSWITCHES=" -e $PWD -t $PWD "
+	else
+	    TARSWITCHES=""
+	fi
+
 	echo "[$(date)] making tar1"
-	muse tarball >& tar1.log
+	muse tarball $TARSWITCHES >& tar1.log
 	RC=$?
 	if [ $RC -ne 0 ]; then
 	    echo "[$(date)] tar1 failed with RC=$RC"
@@ -76,7 +82,7 @@ museTest_full(){
 	fi
 
 	echo "[$(date)] making tar2"
-	muse tarball -r Offline/v00 >& tar2.log
+	muse tarball $TARSWITCHES -r Offline/v00 >& tar2.log
 	RC=$?
 	if [ $RC -ne 0 ]; then
 	    echo "[$(date)] tar failed with RC=$RC"
