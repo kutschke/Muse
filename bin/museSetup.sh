@@ -68,6 +68,16 @@ errorMessage() {
     echo "        The environment is clean, try again in this shell"
 }
 
+# dropit doesn't do the right thing if current path is empty
+# $1=existing path, $2=new path to be added
+# return new full path
+mdropit() {
+    if [ -z "$2" ]; then # existing path was blank
+	echo $1
+    else
+	echo $(dropit -p $1 -sfe $2)
+    fi
+}
 
 [ $MUSE_VERBOSE -gt 0 ] && echo "INFO - running museSetup with args: $@"
 
@@ -533,29 +543,30 @@ do
     # add each package source to SimpleConfig and fcl path
     # if include statements are shifted (include repo name), these are not needed
     if [ "$MUSE_NPATH" == "2" ]; then
-	export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/$PP )
+	export MU2E_SEARCH_PATH=$( mdropit $MU2E_SEARCH_PATH $MUSE_WORK_DIR/$PP )
 	# add each package fcl
-	if [ -z "$FHICL_FILE_PATH" ] ; then
-	    export FHICL_FILE_PATH="$MUSE_WORK_DIR/$PP"
-	else
-	    export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/$PP )
-	fi
+	export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $MUSE_WORK_DIR/$PP )
 	# where root finds includes
-	export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/$PP )
+	export ROOT_INCLUDE_PATH=$( mdropit $ROOT_INCLUDE_PATH $MUSE_WORK_DIR/$PP )
     fi
 
     # add package generated fcl 
-    if [[ "$REPO" == "Offline" ]]; then
-	# assuming only Offline generates fcl
- 	export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $BUILD )
+    # assuming only Offline generates fcl
+    if [ "$REPO" == "Offline" ]; then
+	TEMP=$MUSE_WORK_DIR/build/$MUSE_STUB
+ 	export FHICL_FILE_PATH=$( mdropit  $FHICL_FILE_PATH $TEMP )
+
+	if [ "$MUSE_NPATH" == "2" ]; then
+ 	    export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $TEMP/Offline )
+	fi
     fi
 
     # libraries built in each package
-    export LD_LIBRARY_PATH=$( dropit -p $LD_LIBRARY_PATH -sfe $BUILD/lib )
-    export CET_PLUGIN_PATH=$( dropit -p $CET_PLUGIN_PATH -sfe $BUILD/lib )
+    export LD_LIBRARY_PATH=$( mdropit $LD_LIBRARY_PATH $BUILD/lib )
+    export CET_PLUGIN_PATH=$( mdropit $CET_PLUGIN_PATH $BUILD/lib )
 
     # bins build in each package
-    export PATH=$( dropit -p $PATH -sfe $BUILD/bin )
+    export PATH=$( mdropit $PATH $BUILD/bin )
     
     # if the package has a pythin subdir, or bin area, then 
     # include that in the paths, as requested in .muse
@@ -563,38 +574,38 @@ do
 	awk '{if($1=="PYTHONPATH") print $2}')
     for PA in $PATHS
     do
-	export PYTHONPATH=$( dropit -p $PYTHONPATH -sf $MUSE_WORK_DIR/$PP/$PA )
+	export PYTHONPATH=$( mdropit $PYTHONPATH $MUSE_WORK_DIR/$PP/$PA )
     done
     
     PATHS=$(cat $PP/.muse | \
 	awk '{if($1=="PATH") print $2}')
     for PA in $PATHS
     do
-	export PATH=$( dropit -p $PATH -sf $MUSE_WORK_DIR/$PP/$PA )
+	export PATH=$( mdropit $PATH $MUSE_WORK_DIR/$PP/$PA )
     done
     
     PATHS=$(cat $PP/.muse | \
 	awk '{if($1=="FHICL_FILE_PATH") print $2}')
     for PA in $PATHS
     do
-	export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sf $MUSE_WORK_DIR/$PP/$PA )
+	export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $MUSE_WORK_DIR/$PP/$PA )
     done
     
 done
 
 #
 # set paths that start in the MUSE_WORK_DIR
-# and can be referred as Offline/JobConfig... or build/...
+# and can be referred as Offline/JobConfig... 
 # when includes are shifted (contain repo name), these will be the only ones necessary
 #
 if [ -d link ]; then
-    export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/link ) 
-    export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/link )
-    export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/link )
+    export MU2E_SEARCH_PATH=$( mdropit $MU2E_SEARCH_PATH $MUSE_WORK_DIR/link ) 
+    export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $MUSE_WORK_DIR/link )
+    export ROOT_INCLUDE_PATH=$( mdropit $ROOT_INCLUDE_PATH $MUSE_WORK_DIR/link )
 fi
-export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR )
-export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR )
-export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR )
+export MU2E_SEARCH_PATH=$( mdropit $MU2E_SEARCH_PATH $MUSE_WORK_DIR )
+export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $MUSE_WORK_DIR )
+export ROOT_INCLUDE_PATH=$( mdropit $ROOT_INCLUDE_PATH $MUSE_WORK_DIR )
 
 #
 # "setup" the linked packages by making sure links exist
