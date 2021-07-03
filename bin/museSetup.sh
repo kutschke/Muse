@@ -30,11 +30,11 @@ museSetupUsage() {
             st - compile with multi-threading flag off
             trigger - build only libraries needed in the trigger
 
-           Options may be separated by a space or a colon
+           Multiple qualifiers should be separated by a colon
  
 
     Example:
-    muse setup  (if in the Muse working directory)
+    muse setup  (if default directory is the Muse working directory)
     muse -v setup /mu2e/app/users/$USER/analysis -q debug
 
     Musings examples:
@@ -68,6 +68,16 @@ errorMessage() {
     echo "        The environment is clean, try again in this shell"
 }
 
+# dropit doesn't do the right thing if current path is empty
+# $1=existing path, $2=new path to be added
+# return new full path
+mdropit() {
+    if [ -z "$2" ]; then # existing path was blank
+	echo $1
+    else
+	echo $(dropit -p $1 -sfe $2)
+    fi
+}
 
 [ $MUSE_VERBOSE -gt 0 ] && echo "INFO - running museSetup with args: $@"
 
@@ -85,26 +95,69 @@ fi
 if [ -n "$MUSE_WORK_DIR" ]; then
     echo "ERROR - Muse already setup for directory "
     echo "               $MUSE_WORK_DIR "
-    echo "               with OPTS: $MUSE_OPTS"
+    echo "               with OPTS: $MUSE_QUALS"
     return 1
 fi
 
+#
+# parse args
+#
+PARAMS="$(getopt -o hq:12 -l help,qualifiers,1path,2path --name $(basename $0) -- "$@")"
+if [ $? -ne 0 ]; then
+    echo "ERROR - could not parse setup arguments"
+    museSetupUsage
+    exit 1
+fi
+eval set -- "$PARAMS"
+
+MUSE_QUALS=""
+export MUSE_NPATH=2
+
+while true
+do
+    case $1 in
+        -h|--help)
+            museSetupUsage
+            exit 0
+            ;;
+        -q|--qualifiers)
+	    MUSE_QUALS="$2"
+            shift 2
+            ;;
+        -1|--1path)
+	    export MUSE_NPATH=1
+            shift
+            ;;
+        -2|--2path)
+	    export MUSE_NPATH=2
+            shift
+            ;;
+        --)
+            shift
+	    EXTRAS="$@"
+            break
+            ;;
+        *)
+            museSetupUsage
+	    break
+            ;;
+    esac
+done
 
 
 #
 # determine the working dir, and MUSE_WORK_DIR
 #
 
-ARG1=""
-ARG2=""
-if [[ -n "$1" && "$1" != "-q" ]]; then
-    ARG1="$1"
-    shift
+NE=$(echo $EXTRAS | wc -w)
+if [ $NE -gt 2 ]; then
+    echo "ERROR - could not parse setup arguments - too many unqualified words"
+    museSetupUsage
+    exit 1
 fi
-if [[ -n "$1" && "$1" != "-q" ]]; then
-    ARG2="$1"
-    shift
-fi
+
+ARG1=$(echo $EXTRAS | awk '{print $1}' )
+ARG2=$(echo $EXTRAS | awk '{print $2}' )
 
 if [ -z "$ARG1" ]; then
     # if no args, then assume the local dir is the Muse working dir
@@ -121,7 +174,7 @@ else
 	if [  -n "$ARG2"  ]; then
 	    # try to interpret arg2 as a Musings version number
 	    if [ -d "$MUSINGS/$ARG1/$ARG2" ]; then
-		export MUSE_WORK_DIR=$MUSINGS/$ARG1/$ARG2
+		export MUSE_WORK_DIR=$( readlink -f $MUSINGS/$ARG1/$ARG2 )
 	    fi
 	else
 	    # no Musings version, look for a current
@@ -185,11 +238,8 @@ export MUSE_FLAVOR=$( ups flavor | awk -F- '{print $3}' )
 # parse arguments - everything should be a qualifier
 #
 
-# is -q is there, shift it away
-[ "$1" == "-q" ] && shift
-
 # if it is of the form a:b, separate the qualifiers
-export MUSE_OPTS=$(echo "$@" | sed 's/:/ /g' )
+export MUSE_QUALS=$(echo "$MUSE_QUALS" | sed 's/:/ /g' )
 
 # defaults
 export MUSE_BUILD=""
@@ -210,7 +260,7 @@ rec="^[e][0-9]{2}$"
 # regex for version strings like p011 or u000
 ree="^[pu][0-9]{3}$"
 
-for WORD in $MUSE_OPTS
+for WORD in $MUSE_QUALS
 do
     if [ $WORD == "prof" ]; then
 	export MUSE_BUILD=prof
@@ -371,7 +421,7 @@ fi
 
 # these are always present
 export MUSE_STUB=${MUSE_FLAVOR}-${MUSE_BUILD}-${MUSE_COMPILER_E}-${MUSE_ENVSET}
-# TODO leaving this out for now    echo MUSE_PYTHON=$MUSE_PYTHON
+# leaving this out for now    echo MUSE_PYTHON=$MUSE_PYTHON
 [ -n "$MUSE_G4VIS" ]   && export MUSE_STUB=${MUSE_STUB}-$MUSE_G4VIS
 [ -n "$MUSE_G4ST" ]    && export MUSE_STUB=${MUSE_STUB}-$MUSE_G4ST
 [ -n "$MUSE_G4VG" ]    && export MUSE_STUB=${MUSE_STUB}-$MUSE_G4VG
@@ -385,6 +435,7 @@ if [ $MUSE_VERBOSE -gt 0 ]; then
     echo MUSE_BUILD_DIR=$MUSE_BUILD_DIR
 fi
 
+# this is needed for mu2etools setup
 export MU2E_UPS_QUALIFIERS=+${MUSE_COMPILER_E}:+${MUSE_BUILD}
 
 #
@@ -476,82 +527,85 @@ MUSE_REPOS_REV=$( echo $MUSE_REPOS | awk '{for(i=1;i<=NF;i++) print $(NF-i+1)," 
 for PP in $MUSE_REPOS_REV
 do
 
+    # PP may be Repo or link/Repo
+
     # undo links to get to real path
     # for links, this finds the build area that is on the disk 
     # with that linked area
-    #BASE=$(readlink -f  $MUSE_WORK_DIR/$PP/..)
     REPO=$(echo $PP | sed 's/^link\///' )
     BUILD=$MUSE_WORK_DIR/build/$MUSE_STUB/$PP
 
     if [ $MUSE_VERBOSE -gt 0 ]; then
 	echo "Adding repo $PP to paths"
-	#echo "     BASE=$BASE"
 	echo "     BUILD=$BUILD"
     fi
 
-    # add each package source to SimpleConfig path
-    export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/$PP )
-    # add each package fcl
-    if [ -z "$FHICL_FILE_PATH" ] ; then
-	export FHICL_FILE_PATH="$MUSE_WORK_DIR/$PP"
-    else
-	export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/$PP )
+    # add each package source to SimpleConfig and fcl path
+    # if include statements are shifted (include repo name), these are not needed
+    if [ "$MUSE_NPATH" == "2" ]; then
+	export MU2E_SEARCH_PATH=$( mdropit $MU2E_SEARCH_PATH $MUSE_WORK_DIR/$PP )
+	# add each package fcl
+	export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $MUSE_WORK_DIR/$PP )
+	# where root finds includes
+	export ROOT_INCLUDE_PATH=$( mdropit $ROOT_INCLUDE_PATH $MUSE_WORK_DIR/$PP )
     fi
 
     # add package generated fcl 
-    if [[ "$REPO" == "Offline" ]]; then
-	# assuming only Offline generates fcl
- 	export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $BUILD )
+    # assuming only Offline generates fcl
+    if [ "$REPO" == "Offline" ]; then
+	TEMP=$MUSE_WORK_DIR/build/$MUSE_STUB
+ 	export FHICL_FILE_PATH=$( mdropit  $FHICL_FILE_PATH $TEMP )
+
+	if [ "$MUSE_NPATH" == "2" ]; then
+ 	    export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $TEMP/Offline )
+	fi
     fi
+
     # libraries built in each package
-    export LD_LIBRARY_PATH=$( dropit -p $LD_LIBRARY_PATH -sfe $BUILD/lib )
-    export CET_PLUGIN_PATH=$( dropit -p $CET_PLUGIN_PATH -sfe $BUILD/lib )
+    export LD_LIBRARY_PATH=$( mdropit $LD_LIBRARY_PATH $BUILD/lib )
+    export CET_PLUGIN_PATH=$( mdropit $CET_PLUGIN_PATH $BUILD/lib )
+
     # bins build in each package
-    export PATH=$( dropit -p $PATH -sfe $BUILD/bin )
-    # where root finds includes
-    export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/$PP )
+    export PATH=$( mdropit $PATH $BUILD/bin )
     
+    # if the package has a pythin subdir, or bin area, then 
+    # include that in the paths, as requested in .muse
     PATHS=$(cat $PP/.muse |  \
 	awk '{if($1=="PYTHONPATH") print $2}')
     for PA in $PATHS
     do
-	export PYTHONPATH=$( dropit -p $PYTHONPATH -sf $MUSE_WORK_DIR/$PP/$PA )
+	export PYTHONPATH=$( mdropit $PYTHONPATH $MUSE_WORK_DIR/$PP/$PA )
     done
     
     PATHS=$(cat $PP/.muse | \
 	awk '{if($1=="PATH") print $2}')
     for PA in $PATHS
     do
-	export PATH=$( dropit -p $PATH -sf $MUSE_WORK_DIR/$PP/$PA )
+	export PATH=$( mdropit $PATH $MUSE_WORK_DIR/$PP/$PA )
     done
     
     PATHS=$(cat $PP/.muse | \
 	awk '{if($1=="FHICL_FILE_PATH") print $2}')
     for PA in $PATHS
     do
-	export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sf $MUSE_WORK_DIR/$PP/$PA )
+	export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $MUSE_WORK_DIR/$PP/$PA )
     done
     
-
-#    if [ "$PP" == "Offline" ]; then
-#	export MU2E_BASE_RELEASE=$BASE/Offline
-#    fi
-
 done
 
 #
 # set paths that start in the MUSE_WORK_DIR
-# and can be referred as Offline/JobConfig... or build/...
-# when the include files are shifted, these will be the only ones necessary
+# and can be referred as Offline/JobConfig... 
+# when includes are shifted (contain repo name), these will be the only ones necessary
 #
 if [ -d link ]; then
-    export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR/link ) 
-    export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR/link )
-    export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR/link )
+    export MU2E_SEARCH_PATH=$( mdropit $MU2E_SEARCH_PATH $MUSE_WORK_DIR/link ) 
+    export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $MUSE_WORK_DIR/link )
+    export ROOT_INCLUDE_PATH=$( mdropit $ROOT_INCLUDE_PATH $MUSE_WORK_DIR/link )
 fi
-export MU2E_SEARCH_PATH=$( dropit -p $MU2E_SEARCH_PATH -sfe $MUSE_WORK_DIR )
-export FHICL_FILE_PATH=$( dropit -p $FHICL_FILE_PATH -sfe $MUSE_WORK_DIR )
-export ROOT_INCLUDE_PATH=$( dropit -p $ROOT_INCLUDE_PATH -sfe $MUSE_WORK_DIR )
+export MU2E_SEARCH_PATH=$( mdropit $MU2E_SEARCH_PATH $MUSE_WORK_DIR )
+export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $MUSE_WORK_DIR )
+export ROOT_INCLUDE_PATH=$( mdropit $ROOT_INCLUDE_PATH $MUSE_WORK_DIR )
 
 #
 # "setup" the linked packages by making sure links exist
@@ -585,6 +639,6 @@ cvmfsReg="^/cvmfs/*"
 fi
 
 
-echo "     Build: $MUSE_BUILD     Core: $MUSE_FLAVOR $MUSE_COMPILER_E $MUSE_ENVSET     Options: $MUSE_OPTS"
+echo "     Build: $MUSE_BUILD     Core: $MUSE_FLAVOR $MUSE_COMPILER_E $MUSE_ENVSET     Options: $MUSE_QUALS"
 
 return 0

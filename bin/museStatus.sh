@@ -74,7 +74,9 @@ echo "  MUSE_REPOS = " $MUSE_REPOS
 [ $MUSE_VERBOSE -gt 0 ] && echo "Verbosity, 0 or 1:"
 echo "  MUSE_VERBOSE = " $MUSE_VERBOSE
 [ $MUSE_VERBOSE -gt 0 ] && echo "user-supplied qualifiers:"
-echo "  MUSE_OPTS = " $MUSE_OPTS
+echo "  MUSE_QUALS = " $MUSE_QUALS
+[ $MUSE_VERBOSE -gt 0 ] && echo "setup one path or two:"
+echo "  MUSE_NPATH = " $MUSE_NPATH
 [ $MUSE_VERBOSE -gt 0 ] && echo "envset determines the UPS products to use:"
 echo "  MUSE_ENVSET = " $MUSE_ENVSET
 [ $MUSE_VERBOSE -gt 0 ] && echo "build directory stub based on the build options:"

@@ -184,7 +184,7 @@ if [ -f "setup.sh" ]; then
 fi
 
 # figure out the ops that are needed explicitly in the setup
-USE_OPTS="$MUSE_OPTS"
+USE_OPTS="$MUSE_QUALS"
 [[ ! "$USE_OPTS" =~ "$MUSE_BUILD" ]] && USE_OPTS="$MUSE_BUILD $USE_OPTS"
 [[ ! "$USE_OPTS" =~ "$MUSE_COMPILER_E" ]] && USE_OPTS="$MUSE_COMPILER_E $USE_OPTS"
 [[ ! "$USE_OPTS" =~ "$MUSE_ENVSET" ]] && USE_OPTS="$MUSE_ENVSET $USE_OPTS"
@@ -226,6 +226,15 @@ rm setup.sh
 #
 # now the builds
 #
+if [ "$RELEASE" == "true"  ]; then
+    # take all existing builds
+    BUILDS=$(find build -mindepth 1 -maxdepth 1 -type d)
+else
+    # take only the build that's setup
+    BUILDS=$MUSE_BUILD_BASE
+fi
+
+
 for REPO in $MUSE_REPOS
 do
     # follow links by default
@@ -236,18 +245,11 @@ do
 	FF=""
     fi
 
+    # tar repo source
     [ $MUSE_VERBOSE -gt 0 ] && echo tar $REPO
     tar $FLAGS $FF $REPO
 
     # now include the repo built parts
-
-    if [ "$RELEASE" == "true"  ]; then
-	# take all existing builds
-	BUILDS=$(find build -mindepth 1 -maxdepth 1 -type d)
-    else
-	# take only the build that's setup
-	BUILDS=$MUSE_BUILD_BASE
-    fi
 
     for BUILD in $BUILDS
     do
@@ -264,6 +266,12 @@ do
 	    tar $FLAGS $FF --exclude=$BUILD/$REPO/tmp $BUILD/$REPO
 	fi
     done
+done
+
+# save .musebuild, there is one for each build
+for BUILD in $BUILDS
+do
+    tar $FLAGS $BUILD/.musebuild
 done
 
 
