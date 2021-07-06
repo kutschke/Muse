@@ -33,7 +33,7 @@ museSetupUsage() {
            Multiple qualifiers should be separated by a colon
  
 
-    Example:
+    Examples:
     muse setup  (if default directory is the Muse working directory)
     muse -v setup /mu2e/app/users/$USER/analysis -q debug
 
@@ -41,8 +41,8 @@ museSetupUsage() {
     muse setup Offline  (setup the current publishd Offline tag)
     muse setup Offline v10_00_00  (setup this version of Offline)
     muse setup ProdJob  (setup current version of ProdJob - Offline and Production)
-    muse setup v10_00_00  (build defaults to Offline)
-    muse setup HEAD setup latest CI build
+    muse setup v10_00_00   (musings defaults to Offline)
+    muse setup HEAD    (setup latest CI build)
 
 
 EOF
@@ -102,46 +102,37 @@ fi
 #
 # parse args
 #
-PARAMS="$(getopt -o hq:12 -l help,qualifiers,1path,2path --name $(basename $0) -- "$@")"
-if [ $? -ne 0 ]; then
-    echo "ERROR - could not parse setup arguments"
-    museSetupUsage
-    exit 1
-fi
-eval set -- "$PARAMS"
 
 MUSE_QUALS=""
 export MUSE_NPATH=2
 
-while true
+ARG1=""
+ARG2=""
+QFOUND=""
+for ARG in "$@"
 do
-    case $1 in
-        -h|--help)
-            museSetupUsage
-            exit 0
-            ;;
-        -q|--qualifiers)
-	    MUSE_QUALS="$2"
-            shift 2
-            ;;
-        -1|--1path)
-	    export MUSE_NPATH=1
-            shift
-            ;;
-        -2|--2path)
-	    export MUSE_NPATH=2
-            shift
-            ;;
-        --)
-            shift
-	    EXTRAS="$@"
-            break
-            ;;
-        *)
-            museSetupUsage
-	    break
-            ;;
-    esac
+    if [ "$QFOUND" == "true" ]; then
+	MUSE_QUALS="$MUSE_QUALS $ARG"
+    elif [ "$ARG" == "-q" ]; then
+	QFOUND="true"
+    elif [[  "$ARG" == "-h" || "$ARG" == "--help" || "$ARG" == "help" ]]; then
+	museSetupUsage
+	return 0
+    elif [ "$ARG" == "-1" ]; then
+	export MUSE_NPATH=1
+    elif [ "$ARG" == "-2" ]; then
+	export MUSE_NPATH=2
+    else
+	if [ "$ARG1" == "" ]; then
+	    ARG1="$ARG"
+	elif [ "$ARG2" == "" ]; then
+	    ARG2="$ARG"
+	else
+	    echo "ERROR - too many unqualified arguments"
+	    errorMessage
+	    return 1
+	fi
+    fi
 done
 
 
@@ -149,23 +140,13 @@ done
 # determine the working dir, and MUSE_WORK_DIR
 #
 
-NE=$(echo $EXTRAS | wc -w)
-if [ $NE -gt 2 ]; then
-    echo "ERROR - could not parse setup arguments - too many unqualified words"
-    museSetupUsage
-    exit 1
-fi
-
-ARG1=$(echo $EXTRAS | awk '{print $1}' )
-ARG2=$(echo $EXTRAS | awk '{print $2}' )
-
 if [ -z "$ARG1" ]; then
     # if no args, then assume the local dir is the Muse working dir
     export MUSE_WORK_DIR=$( readlink -f $PWD)
 else
     MUSINGS=/cvmfs/mu2e.opensciencegrid.org/Musings
     CI_BASE=/cvmfs/mu2e-development.opensciencegrid.org/museCIBuild
-    if [  -d "$ARG1"  ]; then
+    if [[  -d "$ARG1"  && ! -d $ARG1/.git ]]; then
 	# if the first arg is a directory, accept that as Muse working dir
 	# readlink removes links
 	export MUSE_WORK_DIR=$( readlink -f $ARG1)
@@ -276,8 +257,6 @@ do
 	export MUSE_G4ST=st
     elif [ $WORD == "trigger" ]; then
 	export MUSE_TRIGGER=trigger
-    elif [ $WORD == "-q" ]; then
-	:
     elif [[ $WORD =~ $ree ]]; then
 	export MUSE_ENVSET=$WORD
     else
@@ -568,7 +547,7 @@ do
     # bins build in each package
     export PATH=$( mdropit $PATH $BUILD/bin )
     
-    # if the package has a pythin subdir, or bin area, then 
+    # if the package has a python subdir, or bin area, then 
     # include that in the paths, as requested in .muse
     PATHS=$(cat $PP/.muse |  \
 	awk '{if($1=="PYTHONPATH") print $2}')
