@@ -109,6 +109,8 @@ museTest_full(){
 	echo "[$(date)] tar failed with RC=$RC"
 	return 1
     fi
+    # don't let it setup muse current
+    sed -i 's/^setup muse/#setup muse/' tar1/Code/setup.sh 
 
     # unroll second
     echo "[$(date)] unrolling tar2"
@@ -120,19 +122,28 @@ museTest_full(){
 	echo "[$(date)] tar failed with RC=$RC"
 	return 1
     fi
+    # don't let it setup muse current
+    sed -i 's/^setup muse/#setup muse/' tar2/Offline/v00/setup.sh 
 
     # run an exe in each setup
-    for TAR in tar1 tar2
+    for TAR in tar1 tar2 tar2b
     do
 	(
 	    echo "Running setup in $TAR"
-	    if [ "$TAR" == " tar1" ] ; then
+	    TARD=$TAR
+	    if [ "$TAR" == "tar1" ] ; then
 		source tar1/Code/setup.sh
 		RC=$?
-	    else
+	    elif [  "$TAR" == "tar2" ]; then
 		source muse setup tar2/Offline/v00
 		RC=$?
+	    elif [  "$TAR" == "tar2b" ]; then
+		SFILE=$(ls -1 tar2/Offline/v00/build/*/setup.sh | head -1)
+		source $SFILE
+		TARD=tar2
+		RC=$?
 	    fi
+
 	    if [ $RC -ne 0 ]; then
 		echo "[$(date)] setup $TAR failed RC=$RC"
 		exit 1
@@ -141,11 +152,11 @@ museTest_full(){
 	    muse status
 	    
 	    echo "Running ceSimReco in $TAR"
-	    mu2e -n 10 -c Production/Validation/ceSimReco.fcl >& $TAR/ceSimReco.log
+	    mu2e -n 10 -c Production/Validation/ceSimReco.fcl >& $TARD/ceSimReco_${TAR}.log
 	    RC=$?
 	    if [ $RC -ne 0 ]; then
 		echo "[$(date)] ceSimReco in $TAR failed with RC=$RC"
-		tail -50 $TAR/ceSimReco.log
+		tail -50 $TARD/ceSimReco_${TAR}.log
 		exit 1
 	    fi
 	)
@@ -210,7 +221,7 @@ museTest_setup(){
     LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
     LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/master | tail -1)
 
-    for TN in {1..9}
+    for TN in {1..11}
     do
 	echo "setup test #$TN"
 	(
@@ -238,6 +249,10 @@ museTest_setup(){
 		source muse setup master/$LASTCI
 	    elif [ $TN -eq 9 ]; then
 		source muse setup HEAD -q debug
+	    elif [ $TN -eq 10 ]; then
+		source muse setup /cvmfs/mu2e.opensciencegrid.org/Musings/Offline/current
+	    elif [ $TN -eq 11 ]; then
+		source muse setup /cvmfs/mu2e.opensciencegrid.org/Musings/Offline/current -q 
 	    else
 		echo "empty test $TN"
 	    fi
@@ -258,6 +273,12 @@ museTest_setup(){
     done
 
     return 0
+
+# two more which can't be run in this framework
+#( source /cvmfs/mu2e.opensciencegrid.org/Musings/Offline/v00_00_00/build/sl7-  ; muse status )
+#( source /cvmfs/mu2e.opensciencegrid.org/Musings/Offline/v00_00_00/build/sl7-prof-e20-p003/setup.sh  ; muse status )
+
+
 }
 
 museTest_link(){
@@ -394,6 +415,8 @@ if ! mkdir -p $WORKDIR; then
     exit 1
 fi
 
+RCT=0
+
 for TEST in $TESTS
 do
     if ! cd $WORKDIR; then
@@ -416,5 +439,9 @@ do
     museTest_$TEST
     RC=$?
     echo "[$(date)] End $TEST, RC=$RC"
+
+    RCT=$(($RCT+$RC))
     
 done
+
+echo "[$(date)] End RC=$RC"
