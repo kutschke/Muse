@@ -533,11 +533,14 @@ do
     # assuming only Offline generates fcl
     if [ "$REPO" == "Offline" ]; then
 	TEMP=$MUSE_WORK_DIR/build/$MUSE_STUB
- 	export FHICL_FILE_PATH=$( mdropit  $FHICL_FILE_PATH $TEMP )
+	if [[ "$PP" =~ $linkReg ]]; then
+	    TEMP=$TEMP/link
+	fi
 
 	if [ "$MUSE_NPATH" == "2" ]; then
  	    export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $TEMP/Offline )
 	fi
+ 	export FHICL_FILE_PATH=$( mdropit  $FHICL_FILE_PATH $TEMP )
     fi
 
     # libraries built in each package
