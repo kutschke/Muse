@@ -285,7 +285,7 @@ museTest_link(){
     LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
     LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/master | tail -1)
 
-    for TN in {1..3}
+    for TN in {1..5}
     do
 	echo "link test #$TN"
 	(
