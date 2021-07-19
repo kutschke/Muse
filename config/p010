@@ -1,6 +1,6 @@
 
 # the lines starting with two hashes are documentation which can be printed
-## 5/28/2021 art v3_09_01
+## 7/19/21 update mu2e_artdaq_core only, for new DAQ code
 
 #
 # use preferred build type, if none requested
