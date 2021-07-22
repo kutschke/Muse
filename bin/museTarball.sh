@@ -32,7 +32,7 @@ EOF
 
 
 # Parse arguments
-PARAMS="$(getopt -o ht:e:r: -l tmpdir,exportdir,release --name $(basename $0) -- "$@")"
+PARAMS="$(getopt -o ht:e:r: -l tmpdir:,exportdir:,release: --name $(basename $0) -- "$@")"
 if [ $? -ne 0 ]; then
     echo "ERROR - could not parsing tarball arguments"
     usageMuseTarball
