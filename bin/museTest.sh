@@ -334,7 +334,7 @@ echo "[$(date)] Start"
 
 
 # Parse arguments
-PARAMS="$(getopt -o hw:m: -l help,workdir,musedir --name $(basename $0) -- "$@")"
+PARAMS="$(getopt -o hw:m: -l help,workdir:,musedir: --name $(basename $0) -- "$@")"
 if [ $? -ne 0 ]; then
     echo "ERROR - could not parsing tarball arguments"
     usageMuseTarball
