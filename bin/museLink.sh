@@ -71,7 +71,7 @@ if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
 
     echo "  Recent published Offline releases:"
     CC=$( basename $( readlink -f $MUSINGS/Offline/current ) )
-    ls -tr $MUSINGS/Offline | grep -v current | tail -5 | sed "s/$CC/$CC   (current)/"
+    ls -1 $MUSINGS/Offline | grep -v current | tail -5 | sed "s/$CC/$CC   (current)/"
 
     echo "  Recent Offline CI builds"
     BRANCHES=$( ls $CI_BASE )
