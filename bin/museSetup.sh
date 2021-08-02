@@ -168,7 +168,7 @@ else
 	export MUSE_WORK_DIR=$( readlink -f $MUSINGS/Offline/$ARG1 )
     elif [[  "$ARG1" == "HEAD" || "$ARG1" == "head" ]]; then
 	# take the latest master CI
-	HASH=$(ls -tr $CI_BASE/master | tail -1)
+	HASH=$(/bin/ls -1tr $CI_BASE/master | tail -1)
 	export MUSE_WORK_DIR=$( readlink -f $CI_BASE/master/$HASH )
     elif [ -d $CI_BASE/$ARG1 ]; then
 	# use the requested CI build
@@ -190,7 +190,7 @@ fi
 #
 
 OWD=$PWD
-cd $MUSE_WORK_DIR
+/bin/cd $MUSE_WORK_DIR
 
 #
 # if there is a.git in the working dir, stop since, almost 100% certain, 
@@ -438,8 +438,8 @@ export MUSE_LINK_ORDER=$(cat $TEMP | sed 's/#.*$//' | tr "\n\t" "  " | tr -s " "
 # list of local muse packages
 # buildable packages have a .muse file in the top directory
 
-TEMP_REPOS=$(ls -1 */.muse  2> /dev/null | awk -F/ '{print $1}')
-LEMP_REPOS=$(ls -1 link/*/.muse  2> /dev/null | awk -F/ '{print $1"/"$2}')
+TEMP_REPOS=$(/bin/ls -1 */.muse  2> /dev/null | awk -F/ '{print $1}')
+LEMP_REPOS=$(/bin/ls -1 link/*/.muse  2> /dev/null | awk -F/ '{print $1"/"$2}')
 
 # test if this is a linked repo
 linkReg="^link/*"
@@ -595,12 +595,12 @@ export ROOT_INCLUDE_PATH=$( mdropit $ROOT_INCLUDE_PATH $MUSE_WORK_DIR )
 #
 if [ -d link ]; then
     mkdir -p $MUSE_BUILD_BASE/link
-    for REPO in $( ls  link )
+    for REPO in $( /bin/ls  link )
     do
 	BASE=$( readlink -f  link/$REPO/.. )
 	if [ ! -d  $MUSE_BUILD_BASE/link/$REPO  ]; then
 	    if [ -d  $BASE/$MUSE_BUILD_BASE/$REPO ]; then
-		ln -s $BASE/$MUSE_BUILD_BASE/$REPO $MUSE_BUILD_BASE/link/$REPO  
+		/bin/ln -s $BASE/$MUSE_BUILD_BASE/$REPO $MUSE_BUILD_BASE/link/$REPO  
 	    else
 		echo "WARNING - linked repo $REPO does not have the $MUSE_STUB build"
 		echo "                   probably nothing useful can be done in this state"
