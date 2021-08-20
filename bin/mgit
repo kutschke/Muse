@@ -96,7 +96,7 @@ mg_init() {
 	echo "mgit - found existing Offline"
 	cd Offline
     else
-	git init -b master Offline || exit 1
+	git init -b main Offline || exit 1
 	cd Offline
     fi
 
@@ -126,13 +126,13 @@ mg_init() {
 
     local branch=$( mg_branch )
 
-    # if you default to master, it doesn't point to a commit so you can't check it out
+    # if you default to main, it doesn't point to a commit so you can't check it out
     local goodbranch=true
     [[ -z "$branch" || -z "$(git branch -al $branch)" ]] && goodbranch=false
     if [ "$goodbranch" == "true" ] ; then
 	git checkout $branch || exit 1
     else
-	git checkout --no-track -b mgit_init_branch mu2e/master || exit 1
+	git checkout --no-track -b mgit_init_branch mu2e/main || exit 1
     fi
     git read-tree --reset -u HEAD || exit 1
 

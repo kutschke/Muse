@@ -219,7 +219,7 @@ museTest_mgit(){
 museTest_setup(){
 
     LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
-    LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/master | tail -1)
+    LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main | tail -1)
 
     for TN in {1..11}
     do
@@ -246,7 +246,7 @@ museTest_setup(){
 		source muse setup
 		cd ..
 	    elif [ $TN -eq 8 ]; then
-		source muse setup master/$LASTCI
+		source muse setup main/$LASTCI
 	    elif [ $TN -eq 9 ]; then
 		source muse setup HEAD -q debug
 	    elif [ $TN -eq 10 ]; then
@@ -283,7 +283,7 @@ museTest_setup(){
 
 museTest_link(){
     LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
-    LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/master | tail -1)
+    LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main | tail -1)
 
     for TN in {1..5}
     do
@@ -295,9 +295,9 @@ museTest_link(){
 	    if [ $TN -eq 1 ]; then
 		muse link HEAD
 	    elif [ $TN -eq 2 ]; then
-		muse link master/$LASTCI
+		muse link main/$LASTCI
 	    elif [ $TN -eq 3 ]; then
-		muse link /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/master/$LASTCI/Offline
+		muse link /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main/$LASTCI/Offline
 	    elif [ $TN -eq 4 ]; then
 		muse link $LAST
 	    elif [ $TN -eq 5 ]; then

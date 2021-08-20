@@ -24,8 +24,8 @@ usageMuseLink() {
        1) as a path to a repo in a muse working directory:
            muse link /mu2e/app/users/\$USER/myBaseBuild/Offline
        2) a branch/commit for a continuous integration backing build:
-           muse link master/c2409d93
-       3) the latest master commit from continuous integration
+           muse link main/c2409d93
+       3) the latest main commit from continuous integration
            muse link HEAD
        4) a published Offline tag:
            muse link v09_10_00
@@ -95,9 +95,9 @@ NWORD=$(echo $TARGET | awk -F/ '{print NF}')
 PRINTCURRENT="no"
 
 if [[ "$TARGET" == "HEAD" ||  "$TARGET" == "head" ]]; then
-    LASTHASH=$(ls -1tr $CI_BASE/master | tail -1)
-    FTARGET=$CI_BASE/master/$LASTHASH/Offline
-    [ $MUSE_VERBOSE -gt 0 ] && echo "linking CI build Offline master/$LASTHASH"
+    LASTHASH=$(ls -1tr $CI_BASE/main | tail -1)
+    FTARGET=$CI_BASE/main/$LASTHASH/Offline
+    [ $MUSE_VERBOSE -gt 0 ] && echo "linking CI build Offline main/$LASTHASH"
 elif [[ "$TARGET" =~ $pubreg  ]]; then
     # then the first arg was just a verison number, 
     # assume that the intended Musing is Offline

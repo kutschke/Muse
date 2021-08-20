@@ -167,9 +167,9 @@ else
 	# there is one arg, and it is an available Offline version
 	export MUSE_WORK_DIR=$( readlink -f $MUSINGS/Offline/$ARG1 )
     elif [[  "$ARG1" == "HEAD" || "$ARG1" == "head" ]]; then
-	# take the latest master CI
-	HASH=$(/bin/ls -1tr $CI_BASE/master | tail -1)
-	export MUSE_WORK_DIR=$( readlink -f $CI_BASE/master/$HASH )
+	# take the latest main CI
+	HASH=$(/bin/ls -1tr $CI_BASE/main | tail -1)
+	export MUSE_WORK_DIR=$( readlink -f $CI_BASE/main/$HASH )
     elif [ -d $CI_BASE/$ARG1 ]; then
 	# use the requested CI build
 	export MUSE_WORK_DIR=$( readlink -f $CI_BASE/$ARG1 )
