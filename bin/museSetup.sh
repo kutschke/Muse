@@ -190,7 +190,7 @@ fi
 #
 
 OWD=$PWD
-/bin/cd $MUSE_WORK_DIR
+cd $MUSE_WORK_DIR
 
 #
 # if there is a.git in the working dir, stop since, almost 100% certain, 
