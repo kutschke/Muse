@@ -82,7 +82,7 @@ if [ "$COMMAND" == "setup" ]; then
     source museSetup.sh "$@"
     RC=$?
 
-    /bin/cd $OWD
+    cd $OWD
     $DONE $RC
 
 elif [ "$COMMAND" == "status" ]; then    
