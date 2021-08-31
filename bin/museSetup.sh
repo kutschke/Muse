@@ -1,4 +1,4 @@
-#! /bin/bash -x
+#! /bin/bash
 #
 # script to drive the muse command to setup and build Mu2e analysis repos
 #
