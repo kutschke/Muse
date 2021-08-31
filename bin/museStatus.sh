@@ -71,6 +71,18 @@ echo ""
 echo "  MUSE_WORK_DIR = $MUSE_WORK_DIR "
 [ $MUSE_VERBOSE -gt 0 ] && echo "space-separated list of local repos to build:"
 echo "  MUSE_REPOS = " $MUSE_REPOS
+
+linkReg="^link/*"
+for REPO in $MUSE_REPOS
+do
+    if [[ "$REPO" =~ $linkReg ]]; then
+	REALDIR=$(readlink -f $MUSE_WORK_DIR/$REPO | \
+	    sed 's|^/cvmfs/mu2e.opensciencegrid.org/||')
+	echo "      $REPO -> $REALDIR"
+    fi
+done
+
+
 [ $MUSE_VERBOSE -gt 0 ] && echo "Verbosity, 0 or 1:"
 echo "  MUSE_VERBOSE = " $MUSE_VERBOSE
 [ $MUSE_VERBOSE -gt 0 ] && echo "user-supplied qualifiers:"
@@ -79,6 +91,8 @@ echo "  MUSE_QUALS = " $MUSE_QUALS
 echo "  MUSE_NPATH = " $MUSE_NPATH
 [ $MUSE_VERBOSE -gt 0 ] && echo "envset determines the UPS products to use:"
 echo "  MUSE_ENVSET = " $MUSE_ENVSET
+[ $MUSE_VERBOSE -gt 0 ] && echo "art version number:"
+echo "  MUSE_ART = $MUSE_ART ($(echo $SETUP_ART | awk '{print $2}'))"
 [ $MUSE_VERBOSE -gt 0 ] && echo "build directory stub based on the build options:"
 echo "  MUSE_STUB = " $MUSE_STUB
 [ $MUSE_VERBOSE -gt 0 ] && echo "the grid setup file (if any):"
@@ -96,7 +110,6 @@ echo "  MUSE_G4VIS = " $MUSE_G4VIS
 echo "  MUSE_G4ST = " $MUSE_G4ST
 echo "  MUSE_G4VG = " $MUSE_G4VG
 echo "  MUSE_TRIGGER = " $MUSE_TRIGGER
-echo "  MUSE_ART = " $MUSE_ART
 
 echo ""
 echo "MUSE_ENVSET_DIR = $MUSE_ENVSET_DIR"
