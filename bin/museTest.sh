@@ -66,6 +66,14 @@ museTest_full(){
 	    exit 1
 	fi
 
+	valCompare -h >& valCompare.log
+	RC=$?
+	if [ $RC -ne 0 ]; then
+	    echo "[$(date)] valCompare failed with RC=$RC"
+	    tail -50 valCompare.log
+	    exit 1
+	fi
+
 	if [ ! -d /mu2e/data/users/$USER ]; then
 	    TARSWITCHES=" -e $PWD -t $PWD "
 	else
@@ -159,6 +167,16 @@ museTest_full(){
 		tail -50 $TARD/ceSimReco_${TAR}.log
 		exit 1
 	    fi
+
+	    echo "Running valCompare in $TAR"
+	    valCompare -h >& $TARD/valCompare_${TAR}.log
+	    RC=$?
+	    if [ $RC -ne 0 ]; then
+		echo "[$(date)] valCompare in $TAR failed with RC=$RC"
+		tail -50 $TARD/valCompare_${TAR}.log
+		exit 1
+	    fi
+
 	)
 	RC=$?
 	if [ $RC -ne 0 ]; then
