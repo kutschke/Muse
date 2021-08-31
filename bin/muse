@@ -17,9 +17,10 @@ museUsage() {
 
     action:
        status    - print status of setup
+       list      - print information about published Muse builds
        setup     - setup UPS products and path
-       build      - run scons code build
-       link        - create a link to a package in another build area
+       build     - run scons code build
+       link      - create a link to a package in another build area
        tarball   - tar up build for grid or a release
 
    To see each actions options, add "-h" to the action
@@ -94,6 +95,11 @@ elif [ "$COMMAND" == "link" ]; then
 
     # this command must be run in the working dir
     $MUSE_DIR/bin/museLink.sh "$@"
+    $DONE $?
+
+elif [ "$COMMAND" == "list" ]; then    
+
+    $MUSE_DIR/bin/museList.sh "$@"
     $DONE $?
 
 fi
