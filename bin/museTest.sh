@@ -34,8 +34,8 @@ EOF
 #
 
 museTest_full(){
-    ! git clone https://github.com/Mu2e/Offline  && return 1
-    ! git clone https://github.com/Mu2e/Production  && return 1
+    ! git clone -q https://github.com/Mu2e/Offline  && return 1
+    ! git clone -q https://github.com/Mu2e/Production  && return 1
     (
 	! source muse setup && exit 1
 	! muse status && exit 1
@@ -191,7 +191,7 @@ museTest_full(){
 
 museTest_mgit(){
 
-    ! git clone https://github.com/Mu2e/Production  && return 1
+    ! git clone -q https://github.com/Mu2e/Production  && return 1
     
     ! muse link HEAD  && return 1
 
@@ -260,7 +260,7 @@ museTest_setup(){
 		mkdir $TD
 		cd $TD
 		muse link HEAD
-		git clone https://github.com/Mu2e/Production
+		git clone -q https://github.com/Mu2e/Production
 		source muse setup
 		cd ..
 	    elif [ $TN -eq 8 ]; then
@@ -412,7 +412,11 @@ if [ "$MUSEDIR" != "none" ]; then
     source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh
     export MUSE_DIR=$MUSEDIR
     export PATH=$MUSEDIR/bin:$PATH
-    export MUSE_ENVSET_DIR=$MUSEDIR/config
+    export MUSE_ENVSET_DIR=$MUSEDIR/../MuseConfig/envset
+    if [ ! -d $MUSE_ENVSET_DIR ]; then
+	echo "ERROR - musedir $MUSE_ENVSET_DIR does not exist "
+	exit 1
+    fi
     alias muse="source muse"
 elif [ -z "$MUSE_DIR" ]; then
     source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh
@@ -462,4 +466,6 @@ do
     
 done
 
-echo "[$(date)] End RC=$RC"
+echo "[$(date)] End RCT=$RCT"
+
+exit $RCT
