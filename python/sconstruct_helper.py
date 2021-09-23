@@ -150,7 +150,7 @@ def mergeFlags(mu2eOpts):
     build = mu2eOpts['build']
     flags = ['-std=c++17','-Wall','-Wno-unused-local-typedefs','-g',
              '-Werror','-Wl,--no-undefined','-gdwarf-2', '-Wl,--as-needed',
-             '-Werror=return-type','-Winit-self','-Woverloaded-virtual', '-DBOOST_BIND_GLOBAL_PLACEHOLDERS' ]
+             '-Werror=return-type','-Winit-self','-Woverloaded-virtual' ]
     if build == 'prof':
         flags = flags + [ '-O3', '-fno-omit-frame-pointer', '-DNDEBUG' ]
     elif build == 'debug':
