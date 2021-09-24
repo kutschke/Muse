@@ -301,10 +301,18 @@ fi
 
 if [ -z "$MUSE_ENVSET" ]; then
     # look for a local recommendation in a package
-    PP=" . "
-    [ -d link ] && PP=". ./link"
-    DIRS=$( find -L $PP -maxdepth 2 -name .muse | sed -e 's|^\./||' -e 's|/\.muse$||'  |\
-      awk '{if($1!="Offline" && $1!="link/Offline") print $0}'  )
+    DIRS0=$( /bin/ls -1 */.muse 2> /dev/null  | \
+	sed 's|/\.muse$||'  | \
+	awk '{if($1!="Offline") print $0}'  | \
+	tr "\n" " " )
+
+    DIRS1=$( /bin/ls -1 link/*/.muse 2> /dev/null  | \
+	sed 's|/\.muse$||'  | \
+	awk '{if($1!="link/Offline") print $0}' | \
+	tr "\n" " " )
+
+    DIRS="$DIRS0 $DIRS1"
+
     # put these in the front of the search list
     [ -f link/Offline/.muse ] && DIRS="link/Offline $DIRS"
     [ -f Offline/.muse ] && DIRS="Offline $DIRS"
