@@ -30,11 +30,19 @@ mu2eOpts["mu2eCompactPrint"] = mu2eCompactPrint
 
 # add compilation_db option
 AddOption('--mu2eCBD', dest='mu2eCBD',
-#          type='bool',nargs=0,default=False,
           action='store_true',default=False,
           help='when present, also make compilation_db for clang-tidy')
 mu2eCBD = GetOption('mu2eCBD')
 mu2eOpts['mu2eCBD'] = mu2eCBD
+
+# add sanitize switch options
+AddOption('--mu2eSanitize', dest='mu2eSanitize',
+          action='store_true',default=False,
+          help='when present, set -fsanitize=address,undefined')
+mu2eSanitize = GetOption('mu2eSanitize')
+mu2eOpts['mu2eSanitize'] = mu2eSanitize
+
+
 
 # Check that some important environment variables have been set;
 # result is a dictionary of the options
@@ -104,7 +112,11 @@ env.Append(BUILDERS = {'GenericBuild' : generic})
 # this sets the build flags, like -std=c++14 -Wall -O3, etc
 SetOption('warn', 'no-fortran-cxx-mix')
 env.MergeFlags( sch.mergeFlags(mu2eOpts) )
-# env.MergeFlags( '-lpthread' )
+
+# switch to check bounds and many others at runtime
+if(mu2eSanitize):
+    env.PrependUnique(CCFLAGS=['-fsanitize=address,undefined'])
+    env.PrependUnique(LINKFLAGS=['-fsanitize=address,undefined'])
 
 # env construction variables, in SConscript: var=env['VARNAME']
 env.Append( ROOTLIBS = sch.rootLibs() )
