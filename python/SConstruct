@@ -42,7 +42,12 @@ AddOption('--mu2eSanitize', dest='mu2eSanitize',
 mu2eSanitize = GetOption('mu2eSanitize')
 mu2eOpts['mu2eSanitize'] = mu2eSanitize
 
-
+# add python wrappers switch options
+AddOption('--mu2ePyWrap', dest='mu2ePyWrap',
+          action='store_true',default=False,
+          help='when present, also build python wrappers')
+mu2ePyWrap = GetOption('mu2ePyWrap')
+mu2eOpts['mu2ePyWrap'] = mu2ePyWrap
 
 # Check that some important environment variables have been set;
 # result is a dictionary of the options
@@ -67,10 +72,12 @@ if mu2ePrint > 5:
 cccomstr = ""
 linkcomstr = ""
 genreflexcomstr = ""
+pywrapcomstr = ""
 if mu2eCompactPrint :
     cccomstr = "Compiling $SOURCE"
     linkcomstr = "Linking $TARGET"
     genreflexcomstr = "genreflex ${SOURCES[1]}"
+    pywrapcomstr = "pywrap ${SOURCES[0]}"
 
 # this the scons object which contains the methods to build code
 env = Environment( CPPPATH = sch.cppPath(mu2eOpts),   # $ART_INC ...
@@ -104,6 +111,9 @@ env.Decider('MD5-timestamp')
 genreflex = Builder(action=Action("export HOME="+os.environ["HOME"]+"; "+"genreflex ${SOURCES[0]} -s ${SOURCES[1]} $_CPPINCFLAGS -l $LIBTEXT -o ${TARGETS[0]} --fail_on_warnings --rootmap-lib=$LIBTEXT  --rootmap=${TARGETS[1]} $DEBUG_FLAG -v",genreflexcomstr))
 env.Append(BUILDERS = {'DictionarySource' : genreflex})
 
+pywrap = Builder(action=Action("swig -c++ -python $_CPPINCFLAGS -o ${TARGETS[0]} -outdir $OUTDIR -module $MODULE ${SOURCES[0]}",pywrapcomstr))
+env.Append(BUILDERS = {'PyWrapSource' : pywrap})
+
 # a generic builder, some files transform to others
 generic = Builder(action="$COMMAND" )
 env.Append(BUILDERS = {'GenericBuild' : generic})
@@ -128,6 +138,7 @@ env.Append( G4MT = mu2eOpts["g4mt"] )
 env.Append( TRIGGER = mu2eOpts["trigger"] )
 env.Append( MUSE_WORK_DIR = mu2eOpts["workDir"] )
 env.Append( MUSE_BUILD_BASE = mu2eOpts["buildBase"] )
+env.Append( PYWRAP = mu2eOpts["mu2ePyWrap"] )
 
 # make the scons environment visible to all SConscript files (Import('env'))
 Export('env')

@@ -104,7 +104,8 @@ def cppPath(mu2eOpts):
         os.environ['PCIE_LINUX_KERNEL_MODULE_INC'],
         os.environ['TRACE_INC'],
         os.environ['GSL_INC'],
-        os.environ['POSTGRESQL_INC']
+        os.environ['POSTGRESQL_INC'],
+        os.environ['PYTHON_INCLUDE']
         ]
 
     return path

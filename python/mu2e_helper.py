@@ -41,13 +41,18 @@ class mu2e_helper:
         # where dictionaries go: build/stub/Offline/tmp/codeDir/dict
         self.dictdir = self.buildBase+'/'+\
                        self.srcPath.replace(self.repo,self.repo+"/tmp")+"/dict"
+        # where python wrappers go, next to dictionary code
+        self.pywrapccdir = self.dictdir.replace("/dict","/pywrap")
         self.libdir = self.buildBase+'/'+self.repo+'/lib'
         self.bindir = self.buildBase+'/'+self.repo+'/bin'
+        # this is build/../repo/pywrap - wrapper py module and interface so
+        self.pywrapdir = self.buildBase+'/'+self.repo+'/pywrap'
         # change string Offline/dir/subdir/src to dir_subdir
+        self.stub = '_'.join(tokens[1:])
         if self.repo == "Offline" :
-            self.libstub = "mu2e_"+'_'.join(tokens[1:])
+            self.libstub = "mu2e_"+self.stub
         else:
-            self.libstub = self.repo.lower()+'_'.join(tokens[1:])
+            self.libstub = self.repo.lower()+self.stub
 
         # A few places we use ClassDef in order to enable a class
         # to be fully capable at the root prompt
@@ -69,9 +74,15 @@ class mu2e_helper:
         return self.libdir+"/lib"+self.libstub + '_' + stub +".so"
     def dict_file(self):
         return self.dictdir+"/"+self.libstub + '_dict.cpp'
+    def pywrapcc_file(self):
+        return self.pywrapccdir+"/"+self.stub + '_pywrap.cpp'
+    def pywrapmod_file(self):
+        return self.pywrapdir+"/"+self.stub+".py"
+    def pywraplib_file(self):
+        return self.pywrapdir+"/_"+self.stub+".so"
     def dict_lib_file(self):
         if self.classdef : # dictionary is in the main lib
-            return self.libdir+"/lib"+self.libstub + '.so'
+            return self.lib_file()
         else :  # dictionary is in its own lib
             return self.libdir+"/lib"+self.libstub + '_dict.so'
     def rootmap_file(self):
@@ -109,6 +120,36 @@ class mu2e_helper:
         return cclist
 
     #
+    #   Make the python wrapper interface
+    #
+    def make_pywrap(self, userlibs=[]):
+        if not self.env['PYWRAP']:  # switch was set
+            return
+        if not 'SWIG_VERSION' in os.environ.keys():  # swig was setup
+            return
+        if not os.path.exists(self.codeDir+"/pywrap.i"): # .i file in this dir
+            return
+
+        sources = ['pywrap.i']
+        # output is the wrap cc and py code
+        targets = ["#/"+self.pywrapcc_file(),
+                   '#/'+self.pywrapmod_file() ]
+
+        self.env.PyWrapSource(targets,sources,MODULE=self.stub,OUTDIR=self.pywrapdir)
+
+        # now also make a shared library for the cc file
+        sources = ["#/"+self.pywrapcc_file()]
+        # output is the wrap cc and py code
+        targets = ['#/'+self.pywraplib_file() ]
+        libs=[ self.lib_link_name(), userlibs, 'python3.9' ]
+        self.env.SharedLibrary( targets, sources, 
+                                LIBS=libs,
+                                SHLIBPREFIX='')
+
+        return
+
+
+    #
     #   Make the main library.
     #
     def make_mainlib( self, userlibs, cppf=[], pf=[], addfortran=False ):
@@ -116,6 +157,7 @@ class mu2e_helper:
         if addfortran:
             fortran = self.env.Glob('*.f', strings=True)
             mainlib_cc = [ mainlib_cc, fortran ]
+
         # if classdef is used, force dictionary into mainlib
         if self.classdef :
             mainlib_cc.append("#/"+self.dict_file())
