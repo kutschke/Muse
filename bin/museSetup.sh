@@ -555,9 +555,12 @@ do
     export LD_LIBRARY_PATH=$( mdropit $LD_LIBRARY_PATH $BUILD/lib )
     export CET_PLUGIN_PATH=$( mdropit $CET_PLUGIN_PATH $BUILD/lib )
 
-    # bins build in each package
+    # bins built in each package
     export PATH=$( mdropit $PATH $BUILD/bin )
     
+    # python wrappers built in each package
+    export PYTHONPATH=$( mdropit $PYTHONPATH $BUILD/pywrap )
+
     # if the package has a python subdir, or bin area, then 
     # include that in the paths, as requested in .muse
     PATHS=$(cat $PP/.muse |  \
