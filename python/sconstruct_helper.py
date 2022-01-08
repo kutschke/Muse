@@ -93,9 +93,10 @@ def cppPath(mu2eOpts):
         os.environ['BOOST_INC'],
         os.environ['CLHEP_INC'] ]
     if 'CPPUNIT_DIR' in os.environ:
-            path = path + [ os.environ['CPPUNIT_DIR']+'/include' ]
+        path = path + [ os.environ['CPPUNIT_DIR']+'/include' ]
+    if 'HEPPDT_INC' in os.environ:
+        path = path + [ os.environ['HEPPDT_INC' ] ]
     path = path + [
-        os.environ['HEPPDT_INC'],
         os.environ['ROOT_INC'],
         os.environ['XERCES_C_INC'],
         os.environ['TBB_INC'],
@@ -116,35 +117,6 @@ def libPath(mu2eOpts):
     path = []
     for dir in os.environ['LD_LIBRARY_PATH'].split(":"):
         path.append(dir)
-#    # the built lib area of each local repo
-#    # the order was determined above
-#    for repo in mu2eOpts['repos'].split():
-#        path.append('#/'+mu2eOpts["buildBase"]+'/'+repo+'/lib')
-#
-#    path = path + [
-#        os.environ['ART_LIB'],
-#        os.environ['ART_ROOT_IO_LIB'],
-#        os.environ['CANVAS_LIB'],
-#        os.environ['BTRK_LIB'],
-#        os.environ['MU2E_ARTDAQ_CORE_LIB'],
-#        os.environ['ARTDAQ_CORE_LIB'],
-#        os.environ['PCIE_LINUX_KERNEL_MODULE_LIB'],
-#        os.environ['MESSAGEFACILITY_LIB'],
-#        os.environ['HEP_CONCURRENCY_LIB'],
-#        os.environ['FHICLCPP_LIB'],
-#        os.environ['SQLITE_LIB'],
-#        os.environ['CETLIB_LIB'],
-#        os.environ['CETLIB_EXCEPT_LIB'],
-#        os.environ['BOOST_LIB'],
-#        os.environ['CLHEP_LIB_DIR'],
-#        os.environ['CPPUNIT_DIR']+'/lib',
-#        os.environ['HEPPDT_LIB'],
-#        os.environ['ROOTSYS']+'/lib',
-#        os.environ['XERCESCROOT']+'/lib',
-#        os.environ['TBB_LIB'],
-#        os.environ['GSL_LIB'],
-#        os.environ['POSTGRESQL_LIBRARIES']
-#        ]
 
     return path
 
