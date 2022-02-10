@@ -285,10 +285,11 @@ fi
 #
 # cases allowed so far
 # 1) an explicit qualifier like "-q p000"
-# 2) Offline is local, pgit or a link, and has a .muse, use recommendation there
-# 3) any other local package has a .muse with a recommendation
-# 4) $MUSE_WORK_DIR/uNNN exists, take highest number there
-# 5) use highest number from $MUSE_ENVSET_DIR
+# 2) the MUSE_WORK_DIR has a .muse
+# 3) Offline is local, pgit or a link, and has a .muse, use recommendation there
+# 4) any other local package has a .muse with a recommendation
+# 5) $MUSE_WORK_DIR/uNNN exists, take highest number there
+# 6) use highest number from $MUSE_ENVSET_DIR
 #
 
 if [ -n "$MUSE_ENVSET" ]; then
@@ -316,6 +317,7 @@ if [ -z "$MUSE_ENVSET" ]; then
     # put these in the front of the search list
     [ -f link/Offline/.muse ] && DIRS="link/Offline $DIRS"
     [ -f Offline/.muse ] && DIRS="Offline $DIRS"
+    [ -f ./.muse ] && DIRS=". $DIRS"
 
     WARN=false
     for DIR in $DIRS ; do
@@ -325,9 +327,11 @@ if [ -z "$MUSE_ENVSET" ]; then
 	if [[ -n "$WORD" && -z "$MUSE_ENVSET" ]]; then
 	    # take the first in this loop
 	    export MUSE_ENVSET=$WORD
-	    if [ $MUSE_VERBOSE -gt 0 ]; then 
+	    if [ $MUSE_VERBOSE -gt 0 ]; then
+                DIRP="/$DIR"  # print detail
+                [ "$DIR" == "." ] && DIRP=""
 		echo "INFO - using  environment $MUSE_ENVSET from" 
-		echo "           \$MUSE_WORK_DIR/$DIR/.muse"
+		echo "           \$MUSE_WORK_DIR${DIRP}/.muse"
 	    fi
 	fi
 	[[ -n "$WORD" && -n "$MUSE_ENVSET" && "$WORD" != "$MUSE_ENVSET"  ]] && WARN=true
