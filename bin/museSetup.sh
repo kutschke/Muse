@@ -541,8 +541,8 @@ do
 	export ROOT_INCLUDE_PATH=$( mdropit $ROOT_INCLUDE_PATH $MUSE_WORK_DIR/$PP )
     fi
 
-    # add package generated fcl 
-    # assuming only Offline generates fcl
+    # add package-generated fcl (trigger) and data (gdml) paths
+    # assuming only Offline generates these
     if [ "$REPO" == "Offline" ]; then
 	TEMP=$MUSE_WORK_DIR/build/$MUSE_STUB
 	if [[ "$PP" =~ $linkReg ]]; then
@@ -551,8 +551,10 @@ do
 
 	if [ "$MUSE_NPATH" == "2" ]; then
  	    export FHICL_FILE_PATH=$( mdropit $FHICL_FILE_PATH $TEMP/Offline )
+            export MU2E_SEARCH_PATH=$( mdropit $MU2E_SEARCH_PATH $TEMP/Offline )
 	fi
- 	export FHICL_FILE_PATH=$( mdropit  $FHICL_FILE_PATH $TEMP )
+        export FHICL_FILE_PATH=$( mdropit  $FHICL_FILE_PATH $TEMP )
+        export MU2E_SEARCH_PATH=$( mdropit $MU2E_SEARCH_PATH $TEMP )
     fi
 
     # libraries built in each package
