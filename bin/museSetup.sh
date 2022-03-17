@@ -104,7 +104,7 @@ fi
 #
 
 MUSE_QUALS=""
-export MUSE_NPATH=2
+export MUSE_NPATH=1
 
 ARG1=""
 ARG2=""
