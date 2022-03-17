@@ -50,7 +50,7 @@ museTest_full(){
 	    exit 1
 	fi
 
-	mu2e -c HelloWorld/test/hello.fcl >& hello.log
+	mu2e -c Offline/HelloWorld/test/hello.fcl >& hello.log
 	RC=$?
 	if [ $RC -ne 0 ]; then
 	    echo "[$(date)] hello failed with RC=$RC"
@@ -218,7 +218,7 @@ museTest_mgit(){
 	fi
 
 	echo "mgit hello test"
-	mu2e -c HelloWorld/test/hello.fcl >& hello.log
+	mu2e -c Offline/HelloWorld/test/hello.fcl >& hello.log
 	RC=$?
 	if [ $RC -ne 0 ]; then
 	    echo "[$(date)] ERROR - mgit hello failed RC=$RC "
