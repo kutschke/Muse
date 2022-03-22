@@ -23,6 +23,7 @@ usageMuseTest() {
                make a tarball, and setup and run the tarball
         mgit - link head, checkout Offline, init mgit, setup, build, exit mgit
         link - check various link functions
+        backing - check various backing functions
         setup - check various setup functions
 
 EOF
@@ -109,7 +110,7 @@ museTest_full(){
 
     # unroll first
     echo "[$(date)] unrolling tar1"
-    TBALL=$(cat tar1.log | head -1 | awk '{print $2}' )
+    TBALL=$(cat tar1.log | grep "Tarball:" | awk '{print $2}' )
     mkdir -p tar1
     tar -C tar1 -xf $TBALL
     RC=$?
@@ -122,7 +123,7 @@ museTest_full(){
 
     # unroll second
     echo "[$(date)] unrolling tar2"
-    TBALL=$(cat tar2.log | head -1 | awk '{print $2}' )
+    TBALL=$(cat tar2.log | grep "Tarball:" | awk '{print $2}' )
     mkdir -p tar2
     tar -C tar2 -xf $TBALL
     RC=$?
@@ -193,7 +194,7 @@ museTest_mgit(){
 
     ! git clone -q https://github.com/Mu2e/Production  && return 1
     
-    ! muse link HEAD  && return 1
+    ! muse backing HEAD  && return 1
 
     ! mgit init  && return 1
 
@@ -239,7 +240,7 @@ museTest_setup(){
     LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
     LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main | tail -1)
 
-    for TN in {1..11}
+    for TN in {1..10}
     do
 	echo "setup test #$TN"
 	(
@@ -249,27 +250,30 @@ museTest_setup(){
 	    elif [ $TN -eq 2 ]; then
 		source muse setup Offline $LAST
 	    elif [ $TN -eq 3 ]; then
-		source muse setup $LAST
-	    elif [ $TN -eq 4 ]; then
-		source muse setup current
-	    elif [ $TN -eq 5 ]; then
 		source muse setup Offline current
-	    elif [ $TN -eq 6 ]; then
+	    elif [ $TN -eq 4 ]; then
 		source muse setup HEAD
-	    elif [ $TN -eq 7 ]; then
+	    elif [ $TN -eq 5 ]; then
 		mkdir $TD
 		cd $TD
 		muse link HEAD
 		git clone -q https://github.com/Mu2e/Production
 		source muse setup
 		cd ..
-	    elif [ $TN -eq 8 ]; then
+	    elif [ $TN -eq 6 ]; then
+		mkdir $TD
+		cd $TD
+		muse backing HEAD
+		git clone -q https://github.com/Mu2e/Production
+		source muse setup
+		cd ..
+	    elif [ $TN -eq 7 ]; then
 		source muse setup main/$LASTCI
-	    elif [ $TN -eq 9 ]; then
+	    elif [ $TN -eq 8 ]; then
 		source muse setup HEAD -q debug
-	    elif [ $TN -eq 10 ]; then
+	    elif [ $TN -eq 9 ]; then
 		source muse setup /cvmfs/mu2e.opensciencegrid.org/Musings/Offline/current
-	    elif [ $TN -eq 11 ]; then
+	    elif [ $TN -eq 10 ]; then
 		source muse setup /cvmfs/mu2e.opensciencegrid.org/Musings/Offline/current -q 
 	    else
 		echo "empty test $TN"
@@ -317,9 +321,54 @@ museTest_link(){
 	    elif [ $TN -eq 3 ]; then
 		muse link /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main/$LASTCI/Offline
 	    elif [ $TN -eq 4 ]; then
-		muse link $LAST
+		muse link Offline
 	    elif [ $TN -eq 5 ]; then
 		muse link Offline $LAST
+	    else
+		echo "empty test $TN"
+	    fi
+	    RC=$?
+	    if [ $RC -ne 0 ]; then
+		echo "[$(date)] link failed with RC=$RC at test $TN"
+		exit 1
+	    fi
+	    ! source muse setup && exit 1
+	    mu2e -c Offline/HelloWorld/test/hello.fcl >& setup_test_${TN}.log
+	    RC=$?
+	    if [ $RC -ne 0 ]; then
+		echo "[$(date)] link hello failed with RC=$RC at test $TN"
+		exit 1
+	    fi   
+	)
+	RC=$?
+	[ $RC -ne 0 ] && return $RC
+    done
+
+    return 0
+
+}
+
+museTest_backing(){
+    LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
+    LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main | tail -1)
+
+    for TN in {1..5}
+    do
+	echo "backing test #$TN"
+	(
+	    TD="test$TN"
+	    mkdir $TD
+	    cd $TD
+	    if [ $TN -eq 1 ]; then
+		muse backing HEAD
+	    elif [ $TN -eq 2 ]; then
+		muse backing main/$LASTCI
+	    elif [ $TN -eq 3 ]; then
+		muse backing /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main/$LASTCI
+	    elif [ $TN -eq 4 ]; then
+		muse backing Offline
+	    elif [ $TN -eq 5 ]; then
+		muse backing Offline $LAST
 	    else
 		echo "empty test $TN"
 	    fi
@@ -354,7 +403,7 @@ echo "[$(date)] Start"
 # Parse arguments
 PARAMS="$(getopt -o hw:m: -l help,workdir:,musedir: --name $(basename $0) -- "$@")"
 if [ $? -ne 0 ]; then
-    echo "ERROR - could not parsing tarball arguments"
+    echo "ERROR - could not parse arguments"
     usageMuseTarball
     exit 1
 fi
@@ -363,7 +412,7 @@ eval set -- "$PARAMS"
 WORKBASE=/mu2e/data/users/$USER
 MUSEDIR=none
 EXTRAS=""
-ALLTESTS="full mgit setup link"
+ALLTESTS="full mgit setup link backing"
 
 while true
 do

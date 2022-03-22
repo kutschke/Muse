@@ -13,8 +13,8 @@ echo "
    mgit command <args>
 
      A script to help with partial checkout of Offline repo.  It is necessary 
-  to use \"muse link\" to link to the backing build into your Muse working directory.  
-  Then use \"mgit init\" to start the partial checkout area.  Commands \"muse link\"
+  to use \"muse backing\" to link to the backing build into your Muse working directory.  
+  Then use \"mgit init\" to start the partial checkout area.  Commands \"muse backing\"
   and \"mgit init\" must be run while in the Muse working directory, and the other
   mgit commands must be run inside the Offline directory.
      When building only part of a repo locally, it is important to always be 

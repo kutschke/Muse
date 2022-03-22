@@ -69,7 +69,14 @@ echo ""
 
 [ $MUSE_VERBOSE -gt 0 ] && echo "directory containing repos to be built:"
 echo "  MUSE_WORK_DIR = $MUSE_WORK_DIR "
-[ $MUSE_VERBOSE -gt 0 ] && echo "space-separated list of local repos to build:"
+if [ -n "$MUSE_BACKING" ]; then
+    for BDIR in $MUSE_BACKING
+    do
+        echo "    backed by $BDIR"
+    done
+fi
+
+[ $MUSE_VERBOSE -gt 0 ] && echo "space-separated list of repos in paths:"
 echo "  MUSE_REPOS = " $MUSE_REPOS
 
 linkReg="^link/*"

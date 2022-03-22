@@ -205,12 +205,12 @@ cat >> setup.sh <<EOF
 CODE_DIR=\$(dirname \$(readlink -f \$BASH_SOURCE))
 [ -f \$CODE_DIR/setup_pre.sh ] && source \$CODE_DIR/setup_pre.sh
 $PRODPATH
-setup muse
 muse setup \$CODE_DIR -q $OPTTEXT
 RC=\$?
 [ -f \$CODE_DIR/setup_post.sh ] && source \$CODE_DIR/setup_post.sh
 return \$RC
 EOF
+
 
 tar $FLAGS setup.sh
 rm setup.sh
@@ -233,6 +233,26 @@ else
     # take only the build that's setup
     BUILDS=$MUSE_BUILD_BASE
 fi
+
+
+#
+# old or new backing build style
+#
+
+HASLINK=""
+[ -d link ] && HASLINK="yes"
+
+HASBACKING=""
+[ -e backing ] && HASBACKING="yes"
+
+#
+# Now begin a giant if statement depending on whether 
+# we have link directory or backing links.  For now, default
+# to the old link code if there is neither.
+#
+
+# *************************************** giant link/backing if start
+if [[ "$HASLINK" && ! "$HASBACKING" ]]; then
 
 
 for REPO in $MUSE_REPOS
@@ -268,12 +288,58 @@ do
     done
 done
 
+
+else   # *********************************** giant if for link/backing
+
+LDIR=""
+QMORE="yes"
+while [ "$QMORE" ]
+do
+    TEMP_REPOS=$(/bin/ls -1 ${LDIR}*/.muse  2> /dev/null | \
+        awk -F/ '{N=(NF-1); if($N!="backing") printf "%s ", $N}' ) 
+    
+    for REPO in $TEMP_REPOS
+    do
+        # tar repo source
+        [ $MUSE_VERBOSE -gt 0 ] && echo tar ${LDIR}$REPO
+        tar $FLAGS -h ${LDIR}$REPO
+        for BUILD in $BUILDS
+        do
+            tar $FLAGS -h --exclude=${LDIR}$BUILD/$REPO/tmp ${LDIR}$BUILD/$REPO
+        done
+    done
+
+    # if there is a backing link which points to cvmfs, stop tarring
+    if [ -e ${LDIR}backing ]; then
+        BDD=$(readlink -f ${LDIR}backing)
+        if [[ "$BDD" =~ $cvmfsReg ]]; then
+            # we have to make a fake set of links here because we want 
+            # the intermediate "backing" links to become directories (tar -h)
+            # but we want the last in the chain, the link to cvmfs, to remain a link
+            TMP=$(mktemp -d)
+            mkdir -p $TMP/$LDIR
+            ln -s $BDD $TMP/${LDIR}backing
+            tar $FLAGS -C $TMP backing
+            rm -rf $TMP
+            QMORE=""
+        else
+            LDIR=${LDIR}backing/
+        fi
+    else
+        QMORE=""
+    fi
+
+done # loop over backing links
+
+
+fi   # ************************************* giant if for link/backing
+
+
 # save .musebuild, there is one for each build
 for BUILD in $BUILDS
 do
     tar $FLAGS $BUILD/.musebuild
 done
-
 
 if [ "$RELEASE" == "true"  ]; then
     for BUILD in $BUILDS
