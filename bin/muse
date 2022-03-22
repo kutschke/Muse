@@ -21,6 +21,7 @@ museUsage() {
        setup     - setup UPS products and path
        build     - run scons code build
        link      - create a link to a package in another build area
+       backing   - create a link to a backing build in another area
        tarball   - tar up build for grid or a release
 
    To see each actions options, add "-h" to the action
@@ -89,6 +90,12 @@ if [ "$COMMAND" == "setup" ]; then
 elif [ "$COMMAND" == "status" ]; then    
 
     $MUSE_DIR/bin/museStatus.sh "$@"
+    $DONE $?
+
+elif [ "$COMMAND" == "backing" ]; then    
+
+    # this command must be run in the working dir
+    $MUSE_DIR/bin/museBacking.sh "$@"
     $DONE $?
 
 elif [ "$COMMAND" == "link" ]; then    

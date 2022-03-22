@@ -72,11 +72,17 @@ def cppPath(mu2eOpts):
     path = []
     # the directory containing the local repos
     path.append(mu2eOpts["workDir"])
-    path.append(mu2eOpts["workDir"]+"/link")
-    # add the build directory of each package, for generated code
-    if os.environ['MUSE_NPATH'] == "2" :
-        for repo in mu2eOpts['repos'].split():
-            path.append(mu2eOpts['workDir']+'/'+repo)
+    # the backing build areas style
+    if len(os.environ['MUSE_BACKING'])>0 :
+        for bdir in os.environ['MUSE_BACKING'].split():
+            path.append(bdir)
+    else:
+        # the linked repo style
+        path.append(mu2eOpts["workDir"]+"/link")
+        # add the build directory of each package, for generated code
+        if os.environ['MUSE_NPATH'] == "2" :
+            for repo in mu2eOpts['repos'].split():
+                path.append(mu2eOpts['workDir']+'/'+repo)
 
     path = path + [
         os.environ['ART_INC'],

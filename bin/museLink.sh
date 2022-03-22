@@ -40,20 +40,38 @@ usageMuseLink() {
 
        Note: A link is to a repo, not another Muse working directory.
        You cannot link a Musing that is not a single-repo build.  For example,
-       if Musings X contains repos Y and Z, then \"muse link X\" will fail. 
-       if Musing X contains repo X, then \"muse link X\" will suceed.  
+       if Musings X contains repos Y and Z, then "muse link X" will fail. 
+       if Musing X contains repo X, then "muse link X" will suceed.  
        
 
        <options>
        -h, --help  : print usage
+       -r, --rm  : remove existing links
  
 EOF
   return
 }
 
+    cat <<EOF
+
+     ********************************************************
+       Muse is deprecating the "link" function, which links
+       to individual repos, in favor of the new "backing" function,
+       which links to an entre backing build.  This is simpler,
+       more convenient, and less likely to lead to inconsisten buils       
+     ********************************************************
+
+EOF
+
 
 if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
     usageMuseLink
+    exit 0
+fi
+
+if [[ "$1" == "-r" || "$1" == "--rm" ]]; then
+    rm -rf link
+    rm -rf build/*/link
     exit 0
 fi
 
@@ -84,6 +102,17 @@ if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
 
     exit 0
 fi
+
+#
+# stop if links are already there
+#
+
+if [ -e backing ]; then
+    echo "ERROR - a backing link already exists, this is inconsistent"
+    echo "        with running link, please use backing function or \"rm backing\""
+    exit 1
+fi
+
 
 #
 # try to interpret the target 
