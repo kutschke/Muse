@@ -955,7 +955,7 @@ do
     # the repos in this dir
     export MUSE_REPOS_BDIR="$TEMP0 $TEMP1"
     # all repos
-    export MUSE_REPOS="${MUSE_REPOS}$MUSE_REPOS_BDIR "
+    export MUSE_REPOS="${MUSE_REPOS_BDIR} $MUSE_REPOS"
     [ "$BDIR" == "$MUSE_WORK_DIR" ] && export MUSE_LOCAL_REPOS="$MUSE_REPOS_BDIR"
 
     # done sorting the repos
@@ -1023,9 +1023,62 @@ do
 
 done   # big loop over backing build dirs
 
+# clean whitespace
+export MUSE_LINK_ORDER=$(echo $MUSE_LINK_ORDER)
+export MUSE_REPOS=$(echo $MUSE_REPOS)
+
 if [ $MUSE_VERBOSE -gt 0 ]; then
     echo "MUSE_LINK_ORDER=$MUSE_LINK_ORDER"
     echo "MUSE_REPOS=$MUSE_REPOS"
+fi
+
+#
+# the next 30 lines checks if there were backing repos out of order,
+# for example, if you have Offline locally, then you might have the 
+# backing chain:  Offline -> TrkAna -> Offline
+# this has chance of inconsistent builds and memory errors because
+# TrkAna will see libraries from the first Offline, 
+# but expect them from the second
+#
+
+QWARN=""
+NR=$(echo $MUSE_REPOS | wc -w)
+RARR=($MUSE_REPOS)
+# loop over all repos
+for IRU in ${!RARR[@]}
+do
+    RU=${RARR[$IRU]}
+    # loop over all downstream repos
+    IRD=$(($IRU+1))
+    while [ $IRD -lt $NR ]
+    do
+        RD=${RARR[$IRD]}
+        QFU=""
+        QFD=""
+        # check where they are in the link order
+        for RR in $MUSE_LINK_ORDER
+        do
+            if [ "$RU" == "$RR" ]; then
+                QFU="found"
+                # while in linkOrder loop, found upstream 
+                # after downstream, which is wrong order
+                if [ "$QFD" ]; then
+                    QWARN="yes"
+                    if [ $MUSE_VERBOSE -gt 0 ]; then
+                        echo "Repo order check found $RU ahead of $RD"
+                    fi
+                fi
+            fi
+            [ "$RD" == "$RR" ] && QFD="found"
+        done
+        IRD=$(($IRD+1))
+    done
+done
+
+if [ "$QWARN" ]; then
+    echo "Warning - found repos in an unexpected link order,"
+    echo "     such as Offline upstream of TrkAna.  This can lead to "
+    echo "     inconsistent builds and memory errors."
 fi
 
 
