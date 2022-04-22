@@ -94,8 +94,6 @@ done
 echo "  MUSE_VERBOSE = " $MUSE_VERBOSE
 [ $MUSE_VERBOSE -gt 0 ] && echo "user-supplied qualifiers:"
 echo "  MUSE_QUALS = " $MUSE_QUALS
-[ $MUSE_VERBOSE -gt 0 ] && echo "setup one path or two:"
-echo "  MUSE_NPATH = " $MUSE_NPATH
 [ $MUSE_VERBOSE -gt 0 ] && echo "envset determines the UPS products to use:"
 echo "  MUSE_ENVSET = " $MUSE_ENVSET
 [ $MUSE_VERBOSE -gt 0 ] && echo "art version number:"

@@ -79,10 +79,6 @@ def cppPath(mu2eOpts):
     else:
         # the linked repo style
         path.append(mu2eOpts["workDir"]+"/link")
-        # add the build directory of each package, for generated code
-        if os.environ['MUSE_NPATH'] == "2" :
-            for repo in mu2eOpts['repos'].split():
-                path.append(mu2eOpts['workDir']+'/'+repo)
 
     path = path + [
         os.environ['ART_INC'],
