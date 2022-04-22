@@ -13,7 +13,7 @@ if [ $# -ne 2 ]; then
     echo "ERROR expected two arguments"
     echo " version path/to/products"
     exit 1
-fi 
+fi
 
 VERSION=$1
 PDIR=$2
@@ -74,7 +74,7 @@ PRODUCT = muse
 VERSION = $VERSION
 
 FLAVOR = NULL
-QUALIFIERS = 
+QUALIFIERS =
 
   PROD_DIR = muse/$VERSION
   UPS_DIR = ups

@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# script to drive the muse command to link a package built 
+# script to drive the muse command to link a package built
 #  in another area to this area so it be used as input to the build
 #
 
@@ -10,10 +10,10 @@ usageMuseLink() {
      muse link <repo selection> <options>
 
      Create a link to a repo in another Muse build area so that package
-     can be included in the local build.  The linked package will be included in 
+     can be included in the local build.  The linked package will be included in
      include, link, fcl and data paths, but it will not itself be built.
 
-      Since this command is usually run before "muse setup", 
+      Since this command is usually run before "muse setup",
       in must be run in the intended muse working directory
 
       If the command is run without any arguments, or with -l, a list
@@ -40,14 +40,14 @@ usageMuseLink() {
 
        Note: A link is to a repo, not another Muse working directory.
        You cannot link a Musing that is not a single-repo build.  For example,
-       if Musings X contains repos Y and Z, then "muse link X" will fail. 
-       if Musing X contains repo X, then "muse link X" will suceed.  
-       
+       if Musings X contains repos Y and Z, then "muse link X" will fail.
+       if Musing X contains repo X, then "muse link X" will suceed.
+
 
        <options>
        -h, --help  : print usage
        -r, --rm  : remove existing links
- 
+
 EOF
   return
 }
@@ -58,7 +58,7 @@ EOF
        Muse is deprecating the "link" function, which links
        to individual repos, in favor of the new "backing" function,
        which links to an entre backing build.  This is simpler,
-       more convenient, and less likely to lead to inconsisten buils       
+       more convenient, and less likely to lead to inconsisten buils
      ********************************************************
 
 EOF
@@ -95,9 +95,9 @@ if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
     BRANCHES=$( ls $CI_BASE )
     for BRANCH in $BRANCHES
     do
-	find $CI_BASE/$BRANCH -mindepth 1 -maxdepth 1  \
-	    -printf "%TY-%Tm-%Td %TH:%TM %p\n" |   \
-	    sort -r | sed 's|'$CI_BASE/'||'
+        find $CI_BASE/$BRANCH -mindepth 1 -maxdepth 1  \
+            -printf "%TY-%Tm-%Td %TH:%TM %p\n" |   \
+            sort -r | sed 's|'$CI_BASE/'||'
     done
 
     exit 0
@@ -115,7 +115,7 @@ fi
 
 
 #
-# try to interpret the target 
+# try to interpret the target
 #
 
 pubreg="^v[0-9,_]*+$"
@@ -128,7 +128,7 @@ if [[ "$TARGET" == "HEAD" ||  "$TARGET" == "head" ]]; then
     FTARGET=$CI_BASE/main/$LASTHASH/Offline
     [ $MUSE_VERBOSE -gt 0 ] && echo "linking CI build Offline main/$LASTHASH"
 elif [[ "$TARGET" =~ $pubreg  ]]; then
-    # then the first arg was just a verison number, 
+    # then the first arg was just a verison number,
     # assume that the intended Musing is Offline
     [ $MUSE_VERBOSE -gt 0 ] && echo "linking published Offline $TARGET"
     # must be a full path
@@ -140,14 +140,14 @@ elif [ -d $CI_BASE/$TARGET/Offline ]; then
 elif [[ -d "$TARGET" &&  $NWORD -ne 1 ]]; then
     # the target is a local directory
     # the second clause is necessary because "muse link X"
-    # might be issued in an area with a local X dir, 
+    # might be issued in an area with a local X dir,
     # and we would never link that - it is already active
     reg="^/.*"
     if [[ ! "$TARGET"  =~ $reg  ]]; then
-	# if target was a relative path, then account for the link subdir
-	FTARGET="../$TARGET"
+        # if target was a relative path, then account for the link subdir
+        FTARGET="../$TARGET"
     else
-	FTARGET="$TARGET"
+        FTARGET="$TARGET"
     fi
     [ $MUSE_VERBOSE -gt 0 ] && echo "linking local directory $TARGET"
 elif [[ -n "$VERSION" &&  -d $MUSINGS/$TARGET/$VERSION/$TARGET ]]; then

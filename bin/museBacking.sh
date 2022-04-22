@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# script to drive the muse command to link a package built 
+# script to drive the muse command to link a package built
 #  in another area to this area so it be used as input to the build
 #
 
@@ -9,12 +9,12 @@ usageMuseBacking() {
 
      muse backing <backing build> <options>
 
-     Create a link to another Muse build area to use it 
+     Create a link to another Muse build area to use it
      as backing build for the local build.  The linked area
-     will be included in include, link, fcl and data paths, 
+     will be included in include, link, fcl and data paths,
      but it will not itself be built.
 
-      Since this command is usually run before "muse setup", 
+      Since this command is usually run before "muse setup",
       in must be run in the intended muse working directory
 
       If the command is run without any arguments, or with -l, a list
@@ -79,9 +79,9 @@ if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
     BRANCHES=$( ls $CI_BASE )
     for BRANCH in $BRANCHES
     do
-	find $CI_BASE/$BRANCH -mindepth 1 -maxdepth 1  \
-	    -printf "%TY-%Tm-%Td %TH:%TM %p\n" |   \
-	    sort -r | sed 's|'$CI_BASE/'||'
+        find $CI_BASE/$BRANCH -mindepth 1 -maxdepth 1  \
+            -printf "%TY-%Tm-%Td %TH:%TM %p\n" |   \
+            sort -r | sed 's|'$CI_BASE/'||'
     done
 
     exit 0
@@ -107,7 +107,7 @@ fi
 
 
 #
-# try to interpret the target 
+# try to interpret the target
 #
 
 pubreg="^v[0-9,_]*+$"

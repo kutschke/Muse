@@ -8,27 +8,27 @@ usageMuseBuild() {
 
      muse build <options> <scons options>
 
-     Build the code repos ion the Muse working directory.  
+     Build the code repos ion the Muse working directory.
      This is two steps:
-     1) if needed, create links to the build products 
+     1) if needed, create links to the build products
         of repos added by "muse link"
      2) run scons in the Muse working dir
-     The build directory in the Muse working directory can be deleted to 
+     The build directory in the Muse working directory can be deleted to
      effectively remove all build products.  Nothing is written anywhere else.
 
       <options>
       -h, --help  : print usage
- 
+
       <scons options>
         All the text here is passed to the scons command line.
-        It might include "-j 20" for threaded build, or targets, 
+        It might include "-j 20" for threaded build, or targets,
         or "-c" to clean the build.
- 
+
 EOF
   return 0
 }
 
- 
+
 if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
     usageMuseBuild
     exit 0
@@ -46,7 +46,7 @@ echo -n "$(date +'%D %H:%M:%S to ')" > $MUSE_BUILD_DIR/.musebuild
 
 #
 # make a repo directory in the build area for each repo
-# this is used to indicate the repos were built even if it 
+# this is used to indicate the repos were built even if it
 # produces no files in the build area during the scons build
 
 # first remove old links, which may be stale

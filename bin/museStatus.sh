@@ -5,12 +5,12 @@
 
 museStatusUsage() {
     cat <<EOF
- 
+
     muse <global options> status <command options>
 
-    Print information about the Muse working directory and how 
-    this process is setup.  If "muse setup" has not been run in 
-    this process, attempt to print some useful information 
+    Print information about the Muse working directory and how
+    this process is setup.  If "muse setup" has not been run in
+    this process, attempt to print some useful information
     assuming the default directory is the Muse working directory.
 
     <global options>
@@ -38,19 +38,19 @@ if [ -d build ]; then
     echo "  existing builds:"
     DIRS=$(ls -1 build)
     for DIR in $DIRS; do
-	if [ "$DIR" == "$MUSE_STUB" ]; then
-	    echo  "     $DIR         ** this is your current setup **"
-	    FOUND=true
-	else
-	    echo  "     $DIR"
-	fi
+        if [ "$DIR" == "$MUSE_STUB" ]; then
+            echo  "     $DIR         ** this is your current setup **"
+            FOUND=true
+        else
+            echo  "     $DIR"
+        fi
 
-	echo -n "          Build times: "
-	if [ -e build/$DIR/.musebuild  ]; then
-	    cat build/$DIR/.musebuild
-	else
-	    echo "   N/A"
-	fi
+        echo -n "          Build times: "
+        if [ -e build/$DIR/.musebuild  ]; then
+            cat build/$DIR/.musebuild
+        else
+            echo "   N/A"
+        fi
     done
 else
     echo ""
@@ -83,9 +83,9 @@ linkReg="^link/*"
 for REPO in $MUSE_REPOS
 do
     if [[ "$REPO" =~ $linkReg ]]; then
-	REALDIR=$(readlink -f $MUSE_WORK_DIR/$REPO | \
-	    sed 's|^/cvmfs/mu2e.opensciencegrid.org/||')
-	echo "      $REPO -> $REALDIR"
+        REALDIR=$(readlink -f $MUSE_WORK_DIR/$REPO | \
+            sed 's|^/cvmfs/mu2e.opensciencegrid.org/||')
+        echo "      $REPO -> $REALDIR"
     fi
 done
 
@@ -105,13 +105,13 @@ echo "  MUSE_STUB = " $MUSE_STUB
 [ $MUSE_VERBOSE -gt 0 ] && echo "the grid setup file (if any):"
 echo "  MUSE_GRID_SETUP = " $MUSE_GRID_SETUP
 
-echo 
+echo
 
 [ $MUSE_VERBOSE -eq 0 ] && exit 0
 echo "build options:"
 echo "  MUSE_FLAVOR = " $MUSE_FLAVOR
 echo "  MUSE_BUILD = " $MUSE_BUILD
-echo "  MUSE_COMPILER_E = " $MUSE_COMPILER_E 
+echo "  MUSE_COMPILER_E = " $MUSE_COMPILER_E
 echo "  MUSE_PYTHON = " $MUSE_PYTHON
 echo "  MUSE_G4VIS = " $MUSE_G4VIS
 echo "  MUSE_G4ST = " $MUSE_G4ST

@@ -5,11 +5,11 @@
 
 usageMuseTarball() {
     cat <<EOF
- 
+
     muse <global options> tarball <options> <extras>
 
      Make a tarball, ready to be submitted to the grid.  All locally built
-     products are tarred, areas on cvmfs are linked.  The tarball defaults to 
+     products are tarred, areas on cvmfs are linked.  The tarball defaults to
      /mu2e/data/users/\$USER/museTarball/tmp.dir/Code.tar.bz2
 
     <global options>
@@ -52,30 +52,30 @@ do
             exit 0
             ;;
         -t|--tmpdir)
-	    TMPDIR="$2"
+            TMPDIR="$2"
             shift 2
             ;;
         -e|--exportdir)
-	    EXPORTDIR="$2"
+            EXPORTDIR="$2"
             shift 2
             ;;
         -r|--release)
-	    RELEASE=true
-	    VSUBDIR="$2"
-	    if [ -z "$VSUBDIR" ]; then
-		echo "ERROR - no version number supplied with release"
-		exit 1
-	    fi
+            RELEASE=true
+            VSUBDIR="$2"
+            if [ -z "$VSUBDIR" ]; then
+                echo "ERROR - no version number supplied with release"
+                exit 1
+            fi
             shift 2
             ;;
         --)
             shift
-	    EXTRAS="$@"
+            EXTRAS="$@"
             break
             ;;
         *)
             usageMuseTarball
-	    break
+            break
             ;;
     esac
 done
@@ -97,12 +97,12 @@ EXPORTSDIR=$EXPORTDIR/$TMPDN
 if [ "$RELEASE" == "true" ] ; then
     P2=$(echo $VSUBDIR | awk -F/ '{print $2}' )
     pubreg="^v[0-9,_]*+$"
-    # if this is a normal version number, then form tarball name 
+    # if this is a normal version number, then form tarball name
     # like ups standard, otherwise take it literally
     if [[ "$P2" =~ $pubreg ]]; then
-	TNAME=$(echo $VSUBDIR | sed -e 's|/v|-|' -e 's|_|\.|g' )-${MUSE_STUB}.tar
+        TNAME=$(echo $VSUBDIR | sed -e 's|/v|-|' -e 's|_|\.|g' )-${MUSE_STUB}.tar
     else
-	TNAME=$(echo $VSUBDIR | sed -e 's|/|-|')-${MUSE_STUB}.tar
+        TNAME=$(echo $VSUBDIR | sed -e 's|/|-|')-${MUSE_STUB}.tar
     fi
 else
     TNAME=Code.tar
@@ -149,7 +149,7 @@ fi
 
 
 #
-# examine the PRODUCTS path and if there are local areas, 
+# examine the PRODUCTS path and if there are local areas,
 #  then include them in the tarball
 #
 PRODPATH=""
@@ -157,15 +157,15 @@ NPP=0
 for DD in $(echo $PRODUCTS | tr ":" " " )
 do
     if [[ ! "$DD" =~ $cvmfsReg ]]; then
-	if [ $MUSE_VERBOSE -gt 0  ]; then
-	    echo "taring local PRODUCTS area $DD"
-	fi
-	LPP=localProducts$NPP
-	ln -s $DD $LPP
-	tar $FLAGS -h $LPP
-	rm -f $LPP
-	PRODPATH="\$CODE_DIR/$LPP:$PRODPATH"
-	NPP=$(($NPP+1))
+        if [ $MUSE_VERBOSE -gt 0  ]; then
+            echo "taring local PRODUCTS area $DD"
+        fi
+        LPP=localProducts$NPP
+        ln -s $DD $LPP
+        tar $FLAGS -h $LPP
+        rm -f $LPP
+        PRODPATH="\$CODE_DIR/$LPP:$PRODPATH"
+        NPP=$(($NPP+1))
     fi
 done
 if [ -n "$PRODPATH" ]; then
@@ -246,7 +246,7 @@ HASBACKING=""
 [ -e backing ] && HASBACKING="yes"
 
 #
-# Now begin a giant if statement depending on whether 
+# Now begin a giant if statement depending on whether
 # we have link directory or backing links.  For now, default
 # to the old link code if there is neither.
 #
@@ -261,8 +261,8 @@ do
     FF=" -h "
     DD=$( readlink -f $REPO )  # expanded, true dir
     if [[ "$DD" =~ $cvmfsReg ]]; then
-	# if the link is to cvmfs, then just copy in the link
-	FF=""
+        # if the link is to cvmfs, then just copy in the link
+        FF=""
     fi
 
     # tar repo source
@@ -273,18 +273,18 @@ do
 
     for BUILD in $BUILDS
     do
-	[ $MUSE_VERBOSE -gt 0 ] && echo tar $BUILD/$REPO
-	if [ ! -d $BUILD/$REPO ]; then
-	    echo "ERROR - $BUILD/$REPO does not exist, was it built?"
-	    exit 1
-	fi
-	DD=$( readlink -f $BUILD/$REPO )  # expanded, true dir
-	if [[ "$DD" =~ $cvmfsReg ]]; then
-	    # just save the link
-	    tar $FLAGS $FF $BUILD/$REPO
-	else  
-	    tar $FLAGS $FF --exclude=$BUILD/$REPO/tmp $BUILD/$REPO
-	fi
+        [ $MUSE_VERBOSE -gt 0 ] && echo tar $BUILD/$REPO
+        if [ ! -d $BUILD/$REPO ]; then
+            echo "ERROR - $BUILD/$REPO does not exist, was it built?"
+            exit 1
+        fi
+        DD=$( readlink -f $BUILD/$REPO )  # expanded, true dir
+        if [[ "$DD" =~ $cvmfsReg ]]; then
+            # just save the link
+            tar $FLAGS $FF $BUILD/$REPO
+        else
+            tar $FLAGS $FF --exclude=$BUILD/$REPO/tmp $BUILD/$REPO
+        fi
     done
 done
 
@@ -296,8 +296,8 @@ QMORE="yes"
 while [ "$QMORE" ]
 do
     TEMP_REPOS=$(/bin/ls -1 ${LDIR}*/.muse  2> /dev/null | \
-        awk -F/ '{N=(NF-1); if($N!="backing") printf "%s ", $N}' ) 
-    
+        awk -F/ '{N=(NF-1); if($N!="backing") printf "%s ", $N}' )
+
     for REPO in $TEMP_REPOS
     do
         # tar repo source
@@ -313,7 +313,7 @@ do
     if [ -e ${LDIR}backing ]; then
         BDD=$(readlink -f ${LDIR}backing)
         if [[ "$BDD" =~ $cvmfsReg ]]; then
-            # we have to make a fake set of links here because we want 
+            # we have to make a fake set of links here because we want
             # the intermediate "backing" links to become directories (tar -h)
             # but we want the last in the chain, the link to cvmfs, to remain a link
             TMP=$(mktemp -d)
@@ -344,8 +344,8 @@ done
 if [ "$RELEASE" == "true"  ]; then
     for BUILD in $BUILDS
     do
-	OPTTEXT=$( echo $BUILD | awk -F/  '{print $2}' | awk -F- '{for(i=2;i<=NF;i++) printf "%s ", $i }')
-	cat >> $BUILD/setup.sh <<EOF
+        OPTTEXT=$( echo $BUILD | awk -F/  '{print $2}' | awk -F- '{for(i=2;i<=NF;i++) printf "%s ", $i }')
+        cat >> $BUILD/setup.sh <<EOF
 export MUSE_SETUP_USE_OPTS="$OPTTEXT"
 BUILD_DIR=\$(dirname \$(readlink -f \$BASH_SOURCE))
 source \$BUILD_DIR/../../setup.sh
@@ -372,12 +372,12 @@ echo Tarball: $EXPORTSDIR/${TNAME}.bz2
 
 SIZE=$( du -ms $TMPDIR | awk '{print $1}' )
 if [ $SIZE -gt 5000 ]; then
-    echo "WARNING - more than 5 GB in temp dir $TMPDIR" 
+    echo "WARNING - more than 5 GB in temp dir $TMPDIR"
 fi
 if [ "$TMPDIR" != "$EXPORTDIR" ]; then
     SIZE=$( du -ms $EXPORTDIR | awk '{print $1}' )
     if [ $SIZE -gt 5000 ]; then
-	echo "WARNING - more than 5 GB in export dir $EXPORTDIR" 
+        echo "WARNING - more than 5 GB in export dir $EXPORTDIR"
     fi
 fi
 
