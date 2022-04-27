@@ -49,9 +49,6 @@ echo -n "$(date +'%D %H:%M:%S to ')" > $MUSE_BUILD_DIR/.musebuild
 # this is used to indicate the repos were built even if it
 # produces no files in the build area during the scons build
 
-# first remove old links, which may be stale
-rm -f $MUSE_BUILD_DIR/link/*
-
 # this should work for old link style and new backing style
 for REPO in $MUSE_LOCAL_REPOS
 do
