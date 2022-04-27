@@ -73,7 +73,7 @@ def cppPath(mu2eOpts):
     # the directory containing the local repos
     path.append(mu2eOpts["workDir"])
     # the backing build areas style
-    if len(os.environ['MUSE_BACKING'])>0 :
+    if os.environ.get('MUSE_BACKING') :
         for bdir in os.environ['MUSE_BACKING'].split():
             path.append(bdir)
     else:
