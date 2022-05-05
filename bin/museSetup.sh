@@ -1073,12 +1073,11 @@ fi   # ************************************* giant if for link/backing
 # add the pre-commit hook to check for whitespace errors, if possible
 #
 
-if [ -w $MUSE_WORK_DIR/Offline/.git/hooks/pre-commit ]; then
-    git -C Offline config --local core.whitespace  trailing-space,tab-in-indent
+if git -C Offline config --local core.whitespace  \
+                     trailing-space,tab-in-indent >& /dev/null ; then
     cp $MUSE_ENVSET_DIR/pre-commit \
         $MUSE_WORK_DIR/Offline/.git/hooks/pre-commit
 fi
-
 
 
 return 0
