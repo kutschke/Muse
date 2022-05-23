@@ -239,7 +239,7 @@ museTest_setup(){
     LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
     LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main | tail -1)
 
-    for TN in {1..10}
+    for TN in {1..9}
     do
         echo "setup test #$TN"
         (
