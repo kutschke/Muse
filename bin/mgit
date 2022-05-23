@@ -12,17 +12,17 @@ echo "
 
    mgit command <args>
 
-     A script to help with partial checkout of Offline repo.  It is necessary 
-  to use \"muse backing\" to link to the backing build into your Muse working directory.  
+     A script to help with partial checkout of Offline repo.  It is necessary
+  to use \"muse backing\" to link to the backing build into your Muse working directory.
   Then use \"mgit init\" to start the partial checkout area.  Commands \"muse backing\"
   and \"mgit init\" must be run while in the Muse working directory, and the other
   mgit commands must be run inside the Offline directory.
-     When building only part of a repo locally, it is important to always be 
+     When building only part of a repo locally, it is important to always be
   aware of how compatable the linked release is with your local modifications.
   See the wiki for more information.
 
   mgit init <git_username>
-     start partial checkout.  This step will create the Mu2e remote, 
+     start partial checkout.  This step will create the Mu2e remote,
      and your personal fork as a remote, if you provide the username argument.
   mgit status
      see the status of the build area, including dependency issues
@@ -62,23 +62,23 @@ mg_test_clean() {
     # untracked
     local test2=$( git ls-files --others --exclude-standard $DD )
     if [ -n "$test2" ]; then
-	[ -n "$ret" ] && ret="${ret},"
-	ret="${ret}untracked files"
+        [ -n "$ret" ] && ret="${ret},"
+        ret="${ret}untracked files"
     fi
 
-    # if we are checking only one dir, then 
+    # if we are checking only one dir, then
     # return now, before looking for unpushed commits
     if [ -n "$DD" ]; then
-	echo $ret
-	return
+        echo $ret
+        return
     fi
 
     # check for unpushed commits
     local branch=$( mg_branch )
     local test3=$( git log --branches --not --remotes )
     if [ -n "$test3" ]; then
-	[ -n "$ret" ] && ret="${ret},"
-	ret="${ret}unpushed commits"
+        [ -n "$ret" ] && ret="${ret},"
+        ret="${ret}unpushed commits"
     fi
     echo $ret
 }
@@ -91,30 +91,30 @@ mg_init() {
 
     CWD=$(basename $PWD)
     if [ "$CWD" == "Offline" ]; then
-	echo "mgit - in existing Offline"
+        echo "mgit - in existing Offline"
     elif [  -d Offline ]; then
-	echo "mgit - found existing Offline"
-	cd Offline
+        echo "mgit - found existing Offline"
+        cd Offline
     else
-	git init -b main Offline || exit 1
-	cd Offline
+        git init -b main Offline || exit 1
+        cd Offline
     fi
 
     echo "mgit - checking/adding/fetching remote mu2e from: github/Mu2e"
     TEST=$( git remote -v | grep fetch | awk '{if($1=="mu2e") print $1}' )
     if [ -z "$TEST" ]; then
-	git remote add mu2e https://github.com/Mu2e/Offline || exit 1
+        git remote add mu2e https://github.com/Mu2e/Offline || exit 1
     fi
 
     git fetch -q mu2e || exit 1
 
     if [ -n "$USERNAME" ]; then
-	echo "mgit - checking/adding/fetching remote origin from: github/$USERNAME"
-	TEST=$( git remote -v | grep fetch | awk '{if($1=="origin") print $1}' )
-	if [ -z "$TEST" ]; then
-	    git remote add origin git@github.com:${USERNAME}/Offline || exit 1
-	fi
-	git fetch -q origin || exit 1
+        echo "mgit - checking/adding/fetching remote origin from: github/$USERNAME"
+        TEST=$( git remote -v | grep fetch | awk '{if($1=="origin") print $1}' )
+        if [ -z "$TEST" ]; then
+            git remote add origin git@github.com:${USERNAME}/Offline || exit 1
+        fi
+        git fetch -q origin || exit 1
     fi
 
     # save variables to .git/config
@@ -130,9 +130,9 @@ mg_init() {
     local goodbranch=true
     [[ -z "$branch" || -z "$(git branch -al $branch)" ]] && goodbranch=false
     if [ "$goodbranch" == "true" ] ; then
-	git checkout $branch || exit 1
+        git checkout $branch || exit 1
     else
-	git checkout --no-track -b mgit_init_branch mu2e/main || exit 1
+        git checkout --no-track -b mgit_init_branch mu2e/main || exit 1
     fi
     git read-tree --reset -u HEAD || exit 1
 
@@ -147,18 +147,42 @@ mg_init() {
 #
 mg_status() {
 
-
-    if [ ! -d $MUSE_WORK_DIR/link/Offline ]; then
-	echo "mgit ERROR - could not find backing release in \$MUSE_WORK_DIR/link/Offline"
-	exit 1
+    if [ -z "$MUSE_WORK_DIR" ]; then
+        echo "mgit ERROR - status can only be run after ""muse setup"""
+        exit 1
     fi
+
+    if [ -d $MUSE_WORK_DIR/backing ]; then
+        local TEMPD=""
+        for DD in $MUSE_BACKING
+        do
+            if [ -d $DD/Offline ]; then
+                TEMPD=$DD
+                break
+            fi
+        done
+
+        if [ -z "$TEMPD" ]; then
+            echo "mgit ERROR - did not find Offline in backing chain"
+            exit 1
+        fi
+        local bline=$( git -C $TEMPD/Offline show --format=format:"%h %d" )
+        local depfile=$TEMPD/$MUSE_BUILD_BASE/Offline/gen/txt/deps.txt
+    elif [ -d $MUSE_WORK_DIR/link/Offline ]; then
+        # the backing build hash
+        local bline=$( git -C $MUSE_WORK_DIR/link/Offline show --format=format:"%h %d" )
+        local depfile=$MUSE_BUILD_DIR/link/Offline/gen/txt/deps.txt
+
+    else
+        echo "mgit ERROR - could not find backing or linked Offline in \$MUSE_WORK_DIR"
+        exit 1
+    fi
+
 
     local branch=$( mg_branch )
     echo "mgit - fetching..."
     git fetch
 
-    # the backing build hash
-    local bline=$( git -C $MUSE_WORK_DIR/link/Offline show --format=format:"%h %d" )
     local bhash=$( echo $bline | awk '{print $1}' )
     local bbranch=$( echo $bline | awk -F, '{print $2}' | awk '{print $1}' )
     # the head of the backing build branch
@@ -169,10 +193,10 @@ mg_status() {
     echo "   head of $bbranch is hash $hhash"
     local nn=$( git rev-list --count  ${bhash}..${hhash} )
     if [ $nn -gt 0 ]; then
-	echo "mgit - WARNING - your backing build is not up to date"
-	echo "   The head of $bbranch is $nn commits ahead of your backing build"
-	echo "   if you merge the head of $bbranch locally, the local code may be"
-	echo "   fatally inconsistent with the backing build"
+        echo "mgit - WARNING - your backing build is not up to date"
+        echo "   The head of $bbranch is $nn commits ahead of your backing build"
+        echo "   if you merge the head of $bbranch locally, the local code may be"
+        echo "   fatally inconsistent with the backing build"
     fi
 
     local packages=$( cat .git/info/sparse-checkout | sed -e 's|^/||' -e 's/\n//g' )
@@ -181,29 +205,28 @@ mg_status() {
     echo $packages
     echo
 
-    local depfile=$MUSE_BUILD_DIR/link/Offline/gen/txt/deps.txt
     if [ ! -f $depfile  ]; then
-	echo "mgit - WARNING - cannot find deps.txt, cannot analyze local dependencies"
-	return 1
+        echo "mgit - WARNING - cannot find deps.txt, cannot analyze local dependencies"
+        return 1
     fi
 
     deps=""
     for pp in $packages
     do
-	temp=$( cat $depfile | awk -v pp=$pp '{if($1="HDR") {   for(i=3;i<=NF; i++) {if($i==pp) print $2;}} } ' )
-	[ -n "$temp" ] && deps="$deps $temp"
+        temp=$( cat $depfile | awk -v pp=$pp '{if($1="HDR") {   for(i=3;i<=NF; i++) {if($i==pp) print $2;}} } ' )
+        [ -n "$temp" ] && deps="$deps $temp"
     done
     if [ -z "$deps"  ]; then
-	echo "mgit - did not find any directories dependent on your checked-out directories"
+        echo "mgit - did not find any directories dependent on your checked-out directories"
     else
-	echo "mgit - WARNING - the following set of Offline directories"
-	echo "   depend on your local checked-out header files. If you modify"
-	echo "   a local header file, the backing build will be inconsistent."
-	echo "   You can \"mgit add\" these to your local area,"
-	echo "   \"mgit quit\" partial checkout, or analyze and take your chances... "
-	echo
-	echo $deps
-	echo
+        echo "mgit - WARNING - the following set of Offline directories"
+        echo "   depend on your local checked-out header files. If you modify"
+        echo "   a local header file, the backing build will be inconsistent."
+        echo "   You can \"mgit add\" these to your local area,"
+        echo "   \"mgit quit\" partial checkout, or analyze and take your chances... "
+        echo
+        echo $deps
+        echo
     fi
     echo "mgit - standard git status:"
     git status
@@ -230,22 +253,22 @@ mg_add() {
 
     for DD in $@
     do
-	SDD="/$DD"
-	NN=$(git ls-files $DD | wc -l)
-	if [ $NN -le 0 ]; then
-	    echo "Warning - \"git ls-files\" found zero files in this subdirectory"
-	    echo "   If this was a typo, you can \"mgit rm $DD\""
-	fi
-	if [[ "$DD" =~ "/" ]]; then
-	    echo "mgit - add target connot contain '/' - skipping"
-	elif grep -q $SDD .git/info/sparse-checkout ; then
-	    echo "mgit - directory $DD already in checkout list"
-	else
-	    echo $SDD >>  .git/info/sparse-checkout
-	    echo "mgit - directory $DD added"
-	fi
+        SDD="/$DD"
+        NN=$(git ls-files $DD | wc -l)
+        if [ $NN -le 0 ]; then
+            echo "Warning - \"git ls-files\" found zero files in this subdirectory"
+            echo "   If this was a typo, you can \"mgit rm $DD\""
+        fi
+        if [[ "$DD" =~ "/" ]]; then
+            echo "mgit - add target connot contain '/' - skipping"
+        elif grep -q $SDD .git/info/sparse-checkout ; then
+            echo "mgit - directory $DD already in checkout list"
+        else
+            echo $SDD >>  .git/info/sparse-checkout
+            echo "mgit - directory $DD added"
+        fi
     done
-    
+
     git checkout -q $BRANCH
 
 }
@@ -259,25 +282,25 @@ mg_rm() {
 
     for DD in $@
     do
-	SDD="/$DD"
-	if grep -q $SDD .git/info/sparse-checkout ; then
-	    if [ -d $DD ]; then
-		local test=$( mg_test_clean $DD )
-		if [ -n "$test" ]; then
-		    echo "mgit - directory $DD has local changes"
-		    echo "          - stash or reset and try again"
-		    continue
-		fi
+        SDD="/$DD"
+        if grep -q $SDD .git/info/sparse-checkout ; then
+            if [ -d $DD ]; then
+                local test=$( mg_test_clean $DD )
+                if [ -n "$test" ]; then
+                    echo "mgit - directory $DD has local changes"
+                    echo "          - stash or reset and try again"
+                    continue
+                fi
 
-	    else
-		echo "mgit - directory $DD was not found locally"
-	    fi
+            else
+                echo "mgit - directory $DD was not found locally"
+            fi
 
-	    sed -i '/\/'${DD}'/d' .git/info/sparse-checkout
-	    echo "mgit - directory $DD removed from checkout list"
-	else
-	    echo "mgit - directory $DD was not in checkout list"
-	fi
+            sed -i '/\/'${DD}'/d' .git/info/sparse-checkout
+            echo "mgit - directory $DD removed from checkout list"
+        else
+            echo "mgit - directory $DD was not in checkout list"
+        fi
     done
 
     # this acts on the change
@@ -294,9 +317,9 @@ mg_quit() {
 
     local clean=$( mg_test_clean )
     if [ -n "$clean" ]; then
-	echo "ERROR mgit - you are in a working dir with $clean"
-	echo "     make your working area clean before running mgit quit"
-	return 1
+        echo "ERROR mgit - you are in a working dir with $clean"
+        echo "     make your working area clean before running mgit quit"
+        return 1
     fi
 
     echo "mgit - turning off partial checkout"
@@ -335,46 +358,45 @@ if [ -z "$command" ]; then
     exit 1
 elif [ "$command" == "init" ]; then
     if [[ -n "$MUSE_WORKING_DIR"  && "$PWD" != "$MUSE_WORKING_DIR" ]]; then
-	# if muse setup was run, the only reasonable place to run init is the working dir
-	echo -e "\nERROR - muse setup has been run, please cd to MUSE_WORKING_DIR to init\n"
-	exit 1
+        # if muse setup was run, the only reasonable place to run init is the working dir
+        echo -e "\nERROR - muse setup has been run, please cd to MUSE_WORKING_DIR to init\n"
+        exit 1
     fi
 elif [[ "$command" != "help" && "$command" != "-h" && "$command" != "--help" ]]; then
     THISDIR=$( basename $PWD)
     if [[ "$THISDIR"  != "Offline" || ! -d .git ]]; then
-	# all other commands are run in Offline directory
-	echo -e "\nERROR - mgit must be run in an Offline repo area\n"
-	exit 1
+        # all other commands are run in Offline directory
+        echo -e "\nERROR - mgit must be run in an Offline repo area\n"
+        exit 1
     fi
 fi
 
 
 case "$command" in
     init)
-	mg_init $@
-	;;
+        mg_init $@
+        ;;
     list)
-	mg_list $@
-	;;
+        mg_list $@
+        ;;
     add)
-	mg_add $@
-	;;
+        mg_add $@
+        ;;
     rm)
-	mg_rm $@
-	;;
+        mg_rm $@
+        ;;
     quit)
-	mg_quit $@
-	;;
+        mg_quit $@
+        ;;
     status)
-	mg_status $@
-	;;
+        mg_status $@
+        ;;
     help | "-h" | "--help" )
-	mg_usage $@
-	;;
+        mg_usage $@
+        ;;
     *)
-	echo "ERROR mgit - unknown command: $command, try mgit help"
-	;;
+        echo "ERROR mgit - unknown command: $command, try mgit help"
+        ;;
 esac
 
 exit 0
-

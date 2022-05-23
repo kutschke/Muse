@@ -25,7 +25,7 @@ class mu2e_helper:
         self.env = env
         # full path of the scons top directory (MUSE_BUILD_DIR)
         self.base = env.GetLaunchDir()
-        # full path to this subdir with the SConscript 
+        # full path to this subdir with the SConscript
         self.codeDir = env.GetBuildPath('SConscript').replace('/SConscript','')
         # diff, like Offline/package/src
         self.srcPath = os.path.relpath(self.codeDir,self.base) # the difference
@@ -142,7 +142,7 @@ class mu2e_helper:
         # output is the wrap cc and py code
         targets = ['#/'+self.pywraplib_file() ]
         libs=[ self.lib_link_name(), userlibs, 'python3.9' ]
-        self.env.SharedLibrary( targets, sources, 
+        self.env.SharedLibrary( targets, sources,
                                 LIBS=libs,
                                 SHLIBPREFIX='')
 

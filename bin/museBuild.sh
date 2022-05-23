@@ -8,7 +8,7 @@ usageMuseBuild() {
 
      muse build <options> <scons options>
 
-     Build the code repos ion the Muse working directory.
+     Build the code repos in the Muse working directory.
      This is two steps:
      1) if needed, create links to the build products
         of repos added by "muse link"
@@ -69,6 +69,3 @@ else
 fi
 
 exit $RC
-
-
-
