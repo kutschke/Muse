@@ -6,8 +6,8 @@
 museUsage() {
 
     cat << EOF
- 
-   System to build multiple Mu2e repos in one scons command 
+
+   System to build multiple Mu2e repos in one scons command
 
    muse <global options> action <action options>
 
@@ -20,7 +20,7 @@ museUsage() {
        list      - print information about published Muse builds
        setup     - setup UPS products and path
        build     - run scons code build
-       link      - create a link to a package in another build area
+       link      -  ..this functionality has been removed..
        backing   - create a link to a backing build in another area
        tarball   - tar up build for grid or a release
 
@@ -31,7 +31,7 @@ EOF
 }
 
 #
-# this script can be sourced (for setup) 
+# this script can be sourced (for setup)
 # or executed, which is necessary for IDE's
 # decide here if we need to return or exit
 #
@@ -87,24 +87,24 @@ if [ "$COMMAND" == "setup" ]; then
     cd $OWD
     $DONE $RC
 
-elif [ "$COMMAND" == "status" ]; then    
+elif [ "$COMMAND" == "status" ]; then
 
     $MUSE_DIR/bin/museStatus.sh "$@"
     $DONE $?
 
-elif [ "$COMMAND" == "backing" ]; then    
+elif [ "$COMMAND" == "backing" ]; then
 
     # this command must be run in the working dir
     $MUSE_DIR/bin/museBacking.sh "$@"
     $DONE $?
 
-elif [ "$COMMAND" == "link" ]; then    
+elif [ "$COMMAND" == "link" ]; then
 
     # this command must be run in the working dir
     $MUSE_DIR/bin/museLink.sh "$@"
     $DONE $?
 
-elif [ "$COMMAND" == "list" ]; then    
+elif [ "$COMMAND" == "list" ]; then
 
     $MUSE_DIR/bin/museList.sh "$@"
     $DONE $?
@@ -116,21 +116,19 @@ if [ -z "$MUSE_WORK_DIR" ]; then
     $DONE 1
 fi
 
-if [ "$COMMAND" == "build" ]; then    
+if [ "$COMMAND" == "build" ]; then
 
     $MUSE_DIR/bin/museBuild.sh "$@"
     RC=$?
 
-elif [ "$COMMAND" == "tarball" ]; then    
+elif [ "$COMMAND" == "tarball" ]; then
 
     $MUSE_DIR/bin/museTarball.sh "$@"
     RC=$?
 
-else 
+else
     echo "ERROR - unknown command  $COMMAND"
     $DONE 1
 fi
 
 $DONE $RC
-
-

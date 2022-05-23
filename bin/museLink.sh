@@ -26,7 +26,7 @@ EOF
        to individual repos, in favor of the new "backing" function,
        which links to an entre backing build.  This is simpler,
        more convenient, and less likely to lead to inconsistent builds
-       You can no longer create links, but you can setup and run 
+       You can no longer create links, but you can setup and run
        old areas containing links.
      ********************************************************
 

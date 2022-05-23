@@ -3,8 +3,8 @@
 #
 import os, re, string, sys
 
-import SCons 
-SCons.Defaults.DefaultEnvironment(tools = []) 
+import SCons
+SCons.Defaults.DefaultEnvironment(tools = [])
 
 # Functions that do small tasks and build lists
 import sconstruct_helper as sch
@@ -157,9 +157,9 @@ ss = sch.sconscriptList(mu2eOpts)
 #  compileDb = env.Alias("compiledb", compileCommands)
 
 # operate on the SConscript files
-# regular python commands like os.path() are executed immediately 
+# regular python commands like os.path() are executed immediately
 # as they are encontered,
-# scons builder commands like env.SharedLibrary are examined 
+# scons builder commands like env.SharedLibrary are examined
 #  for dependences and scheduled to be executed in parallel, as possible
 for sc in ss:
     # transform Offline/X/src/SConscript to build/stub/Offline/tmp/X/src
