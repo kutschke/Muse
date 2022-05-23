@@ -71,6 +71,7 @@ do
         echo -n "  $VV"
         [ "$VV" == "$CURRENTV" ] && echo -n " (current)"
         echo
+
         LINKD=$MUSINGS/$MM/$VV/link
         if [ -d $LINKD ]; then
             for LL in $( ls $LINKD )
@@ -78,13 +79,19 @@ do
                 FLL=$( readlink -f $LINKD/$LL )
                 PKG=$( echo $FLL | awk -F/ '{print $(NF-2)}' )
                 VER=$( echo $FLL | awk -F/ '{print $(NF-1)}' )
-                echo "    $PKG $VER"
+                echo "    linked to $PKG $VER"
             done
         fi
+
+        BACKD=$MUSINGS/$MM/$VV/backing
+        if [ -d $BACKD ]; then
+            FLL=$( readlink -f $BACKD )
+            echo "    backed by $FLL"
+        fi
+
     done
 done
 
 echo
 
 exit 0
-

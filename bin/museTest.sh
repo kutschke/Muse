@@ -22,7 +22,6 @@ usageMuseTest() {
         full - checkout Offline and build prof, checkout Production,
                make a tarball, and setup and run the tarball
         mgit - link head, checkout Offline, init mgit, setup, build, exit mgit
-        link - check various link functions
         backing - check various backing functions
         setup - check various setup functions
 
@@ -256,24 +255,17 @@ museTest_setup(){
             elif [ $TN -eq 5 ]; then
                 mkdir $TD
                 cd $TD
-                muse link HEAD
-                git clone -q https://github.com/Mu2e/Production
-                source muse setup
-                cd ..
-            elif [ $TN -eq 6 ]; then
-                mkdir $TD
-                cd $TD
                 muse backing HEAD
                 git clone -q https://github.com/Mu2e/Production
                 source muse setup
                 cd ..
-            elif [ $TN -eq 7 ]; then
+            elif [ $TN -eq 6 ]; then
                 source muse setup main/$LASTCI
-            elif [ $TN -eq 8 ]; then
+            elif [ $TN -eq 7 ]; then
                 source muse setup HEAD -q debug
-            elif [ $TN -eq 9 ]; then
+            elif [ $TN -eq 8 ]; then
                 source muse setup /cvmfs/mu2e.opensciencegrid.org/Musings/Offline/current
-            elif [ $TN -eq 10 ]; then
+            elif [ $TN -eq 9 ]; then
                 source muse setup /cvmfs/mu2e.opensciencegrid.org/Musings/Offline/current -q
             else
                 echo "empty test $TN"
@@ -303,50 +295,6 @@ museTest_setup(){
 
 }
 
-museTest_link(){
-    LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
-    LASTCI=$( ls -1tr /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main | tail -1)
-
-    for TN in {1..5}
-    do
-        echo "link test #$TN"
-        (
-            TD="test$TN"
-            mkdir $TD
-            cd $TD
-            if [ $TN -eq 1 ]; then
-                muse link HEAD
-            elif [ $TN -eq 2 ]; then
-                muse link main/$LASTCI
-            elif [ $TN -eq 3 ]; then
-                muse link /cvmfs/mu2e-development.opensciencegrid.org/museCIBuild/main/$LASTCI/Offline
-            elif [ $TN -eq 4 ]; then
-                muse link Offline
-            elif [ $TN -eq 5 ]; then
-                muse link Offline $LAST
-            else
-                echo "empty test $TN"
-            fi
-            RC=$?
-            if [ $RC -ne 0 ]; then
-                echo "[$(date)] link failed with RC=$RC at test $TN"
-                exit 1
-            fi
-            ! source muse setup && exit 1
-            mu2e -c Offline/HelloWorld/test/hello.fcl >& setup_test_${TN}.log
-            RC=$?
-            if [ $RC -ne 0 ]; then
-                echo "[$(date)] link hello failed with RC=$RC at test $TN"
-                exit 1
-            fi
-        )
-        RC=$?
-        [ $RC -ne 0 ] && return $RC
-    done
-
-    return 0
-
-}
 
 museTest_backing(){
     LAST=$( ls -1 /cvmfs/mu2e.opensciencegrid.org/Musings/Offline | grep -v current | tail -1)
@@ -412,7 +360,7 @@ eval set -- "$PARAMS"
 WORKBASE=/mu2e/data/users/$USER
 MUSEDIR=none
 EXTRAS=""
-ALLTESTS="full mgit setup link backing"
+ALLTESTS="full mgit setup backing"
 
 while true
 do
