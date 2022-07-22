@@ -1075,8 +1075,18 @@ fi   # ************************************* giant if for link/backing
 
 if git -C Offline config --local core.whitespace  \
                      trailing-space,tab-in-indent >& /dev/null ; then
-    cp $MUSE_ENVSET_DIR/pre-commit \
-        $MUSE_WORK_DIR/Offline/.git/hooks/pre-commit
+
+    LOCALHOOK=$MUSE_WORK_DIR/Offline/.git/hooks/pre-commit
+    STDHOOK=$MUSE_ENVSET_DIR/pre-commit
+
+    if [ ! -e $LOCALHOOK ]; then
+        cp $STDHOOK $LOCALHOOK
+    elif ! diff $STDHOOK $LOCALHOOK >& /dev/null ; then
+        echo "Local Offline git pre-commit hook is different than the current Muse version."
+        echo "To update to the latest version and stop this warning:"
+        echo "cp $STDHOOK $LOCALHOOK"
+    fi
+
 fi
 
 
