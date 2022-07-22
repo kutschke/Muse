@@ -322,14 +322,14 @@ museTest_backing(){
             fi
             RC=$?
             if [ $RC -ne 0 ]; then
-                echo "[$(date)] link failed with RC=$RC at test $TN"
+                echo "[$(date)] backing failed with RC=$RC at test $TN"
                 exit 1
             fi
             ! source muse setup && exit 1
             mu2e -c Offline/HelloWorld/test/hello.fcl >& setup_test_${TN}.log
             RC=$?
             if [ $RC -ne 0 ]; then
-                echo "[$(date)] link hello failed with RC=$RC at test $TN"
+                echo "[$(date)] backing hello failed with RC=$RC at test $TN"
                 exit 1
             fi
         )
