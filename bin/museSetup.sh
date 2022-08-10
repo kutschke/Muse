@@ -217,6 +217,14 @@ if ! which ups >& /dev/null ; then
 fi
 
 export MUSE_FLAVOR=$( ups flavor | awk -F- '{print $3}' )
+if [[ -z "$MUSE_FLAVOR" && -n "$UPS_OVERRIDE" ]]; then
+    export MUSE_FLAVOR=$( echo $UPS_OVERRIDE | awk -F- '{print $3}' )
+fi
+if [ -z "$MUSE_FLAVOR" ]; then
+    echo "ERROR - could not run ups flavor, you might need to set UPS_OVERRIDE"
+    errorMessage
+    return 1
+fi
 
 #
 # parse arguments - everything should be a qualifier
