@@ -217,9 +217,6 @@ if ! which ups >& /dev/null ; then
 fi
 
 export MUSE_FLAVOR=$( ups flavor | awk -F- '{print $3}' )
-if [[ -z "$MUSE_FLAVOR" && -n "$UPS_OVERRIDE" ]]; then
-    export MUSE_FLAVOR=$( echo $UPS_OVERRIDE | awk -F- '{print $3}' )
-fi
 if [ -z "$MUSE_FLAVOR" ]; then
     echo "ERROR - could not run ups flavor, you might need to set UPS_OVERRIDE"
     errorMessage
@@ -669,7 +666,7 @@ else   # *********************************** giant if for link/backing
 # build the chain of backing builds
 #
 export MUSE_BACKING=""
-export MUSE_BACKING_REV=""
+MUSE_BACKING_REV=""
 QMORE="true"
 CURRDIR="$MUSE_WORK_DIR"
 while [ "$QMORE" ]
@@ -931,7 +928,7 @@ do
     done
 
     # the repos in this dir
-    export MUSE_REPOS_BDIR="$TEMP0 $TEMP1"
+    MUSE_REPOS_BDIR="$TEMP0 $TEMP1"
     # all repos
     export MUSE_REPOS="${MUSE_REPOS_BDIR} $MUSE_REPOS"
     [ "$BDIR" == "$MUSE_WORK_DIR" ] && export MUSE_LOCAL_REPOS="$MUSE_REPOS_BDIR"
