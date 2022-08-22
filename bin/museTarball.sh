@@ -19,6 +19,8 @@ usageMuseTarball() {
     -h, --help  : print usage
     -t, --tmpdir : temp build space
     -e, --exportdir : landing directory for the tarball
+    -x, --exclude : filespec of custom exclusions,
+          tar format, and relative to the Muse working dir
     -r, --release SUBDIR : release mode, save all code, .git, and all builds
           ex: --release Offline/v00_00_00 or -r ProdJob/v1_0_0test
 
@@ -32,7 +34,7 @@ EOF
 
 
 # Parse arguments
-PARAMS="$(getopt -o ht:e:r: -l tmpdir:,exportdir:,release: --name $(basename $0) -- "$@")"
+PARAMS="$(getopt -o ht:e:x:r: -l tmpdir:,exportdir:,exclude:,release: --name $(basename $0) -- "$@")"
 if [ $? -ne 0 ]; then
     echo "ERROR - could not parsing tarball arguments"
     usageMuseTarball
@@ -42,6 +44,7 @@ eval set -- "$PARAMS"
 
 TMPDIR=/mu2e/data/users/$USER/museTarball
 EXPORTDIR=/mu2e/data/users/$USER/museTarball
+EXTRAEXCLUDE=""
 RELEASE=false
 
 while true
@@ -57,6 +60,10 @@ do
             ;;
         -e|--exportdir)
             EXPORTDIR="$2"
+            shift 2
+            ;;
+        -x|--exclude)
+            EXTRAEXCLUDE="$2"
             shift 2
             ;;
         -r|--release)
@@ -125,6 +132,9 @@ if [ $MUSE_VERBOSE -gt 0 ]; then
     echo "Extra files: $EXTRAS"
 fi
 
+# add exclude flag if custom exclude is requested
+[ -n "$EXTRAEXCLUDE" ] && EXTRAEXCLUDE=" -X $EXTRAEXCLUDE "
+
 # some regex to categorize dirs
 linkReg="^link/*"
 cvmfsReg="^/cvmfs/*"
@@ -132,7 +142,7 @@ cvmfsReg="^/cvmfs/*"
 # create an empty tarball
 tar -cf $TBALL -T /dev/null
 # write to this tarball and do basic excludes like tmp areas
-FLAGS=" -rf $TBALL  -X $MUSE_DIR/config/tarExclude.txt "
+FLAGS=" -rf $TBALL  -X $MUSE_DIR/config/tarExclude.txt $EXTRAEXCLUDE"
 if [ "$RELEASE" == "true" ] ; then
     # put the area under the VSUBDIR
     FLAGS=" $FLAGS  --transform=s|^|$VSUBDIR/|   --transform=s|^$VSUBDIR//cvmfs|/cvmfs|  "
@@ -142,6 +152,10 @@ else   # for grid tarball
     # put it in a Code subdirectory
     # last transform prevents /cvmfs from becoming Code/cvmfs
     FLAGS=" $FLAGS  --transform=s|^|Code/|   --transform=s|^Code//cvmfs|/cvmfs|  "
+fi
+
+if [ $MUSE_VERBOSE -gt 0 ]; then
+echo "tar flags: $FLAGS"
 fi
 
 # tar any extra files
