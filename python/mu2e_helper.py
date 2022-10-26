@@ -52,7 +52,7 @@ class mu2e_helper:
         if self.repo == "Offline" :
             self.libstub = "mu2e_"+self.stub
         else:
-            self.libstub = self.repo.lower()+self.stub
+            self.libstub = self.repo.lower()+"_"+self.stub
 
         # A few places we use ClassDef in order to enable a class
         # to be fully capable at the root prompt
