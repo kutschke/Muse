@@ -50,10 +50,11 @@ class mu2e_helper:
         # change string Offline/dir/subdir/src to dir_subdir
         self.stub = '_'.join(tokens[1:])
         if self.repo == "Offline" :
-            self.libstub = "mu2e_"+self.stub
+            self.libstub = "mu2e"
         else:
-            self.libstub = self.repo.lower()+"_"+self.stub
-
+            self.libstub = self.repo.lower()
+        if len(self.stub) > 0:
+            self.libstub = self.libstub+"_"+self.stub
         # A few places we use ClassDef in order to enable a class
         # to be fully capable at the root prompt
         # Using ClassDef forces the dictionary to be linked with the main
