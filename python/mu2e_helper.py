@@ -142,7 +142,9 @@ class mu2e_helper:
         sources = ["#/"+self.pywrapcc_file()]
         # output is the wrap cc and py code
         targets = ['#/'+self.pywraplib_file() ]
-        libs=[ self.lib_link_name(), userlibs, 'python3.9' ]
+        libs=[ self.lib_link_name(), userlibs ]
+        if 'PYTHON_LIBDIR' in os.environ:
+            libs = libs + [ os.environ['PYTHON_LIBDIR' ] ]
         self.env.SharedLibrary( targets, sources,
                                 LIBS=libs,
                                 SHLIBPREFIX='')

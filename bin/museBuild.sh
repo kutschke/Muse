@@ -10,8 +10,7 @@ usageMuseBuild() {
 
      Build the code repos in the Muse working directory.
      This is two steps:
-     1) if needed, create links to the build products
-        of repos added by "muse link"
+     1) create output dirs for local repos
      2) run scons in the Muse working dir
      The build directory in the Muse working directory can be deleted to
      effectively remove all build products.  Nothing is written anywhere else.
@@ -49,7 +48,6 @@ echo -n "$(date +'%D %H:%M:%S to ')" > $MUSE_BUILD_DIR/.musebuild
 # this is used to indicate the repos were built even if it
 # produces no files in the build area during the scons build
 
-# this should work for old link style and new backing style
 for REPO in $MUSE_LOCAL_REPOS
 do
     mkdir -p $MUSE_BUILD_DIR/$REPO

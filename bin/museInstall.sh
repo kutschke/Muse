@@ -88,5 +88,3 @@ tar -cjf muse-${VERSION}.bz2 muse/${VERSION} muse/${VERSION}.version
 
 cd $OWD
 exit 0
-
-

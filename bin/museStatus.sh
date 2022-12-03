@@ -58,7 +58,7 @@ else
 fi
 
 if [[ -n "$MUSE_STUB" && "$FOUND" == "false"  ]]; then
-    echo "  pesumptive build:"
+    echo "  presumptive build:"
     echo "     $MUSE_STUB         ** this is your current setup **"
 fi
 echo ""
@@ -85,7 +85,7 @@ do
     if [[ "$REPO" =~ $linkReg ]]; then
         REALDIR=$(readlink -f $MUSE_WORK_DIR/$REPO | \
             sed 's|^/cvmfs/mu2e.opensciencegrid.org/||')
-        echo "      $REPO -> $REALDIR"
+        echo "    (deprecated)  $REPO -> $REALDIR"
     fi
 done
 

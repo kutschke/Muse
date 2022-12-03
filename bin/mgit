@@ -168,13 +168,8 @@ mg_status() {
         fi
         local bline=$( git -C $TEMPD/Offline show --format=format:"%h %d" )
         local depfile=$TEMPD/$MUSE_BUILD_BASE/Offline/gen/txt/deps.txt
-    elif [ -d $MUSE_WORK_DIR/link/Offline ]; then
-        # the backing build hash
-        local bline=$( git -C $MUSE_WORK_DIR/link/Offline show --format=format:"%h %d" )
-        local depfile=$MUSE_BUILD_DIR/link/Offline/gen/txt/deps.txt
-
     else
-        echo "mgit ERROR - could not find backing or linked Offline in \$MUSE_WORK_DIR"
+        echo "mgit ERROR - could not find backing Offline in \$MUSE_WORK_DIR"
         exit 1
     fi
 

@@ -15,7 +15,7 @@ usageMuseBacking() {
      but it will not itself be built.
 
       Since this command is usually run before "muse setup",
-      in must be run in the intended muse working directory
+      it must be run in the intended muse working directory
 
       If the command is run without any arguments, or with -l, a list
       of suggested Offline backing builds will be shown
@@ -87,18 +87,10 @@ if [[ -z "$TARGET" || "$TARGET" == "-l" ]]; then
     exit 0
 fi
 
-
-#
-# check if links are already there
-#
-
 if [ -d link ]; then
-    echo "WARNING - a link directory already exists.  The link function"
-    echo "        overlaps with the backing function.  Once the backing link"
-    echo "        is made, the link dir will be ignored in setup and build."
-    echo "        Or you can run \"muse link -r\"  to remove the links."
-    exit 1
+    echo "WARNING - a deprecated link directory exists, but will be ignored"
 fi
+
 if [ -e backing ]; then
     echo "WARNING - will remove existing backing link:"
     /bin/ls -l backing | awk '{print "    " $NF}'
@@ -140,7 +132,7 @@ elif [[ -d $MUSINGS/$TARGET && $NWORD -eq 1 ]]; then
     TV="$VERSION"
     [ -z "$TV" ] && TV="current"
     FTARGET=$( readlink -f $MUSINGS/$TARGET/$TV )
-    # readline will return empty string if dir doe snot exist
+    # readlink will return empty string if dir does not exist
     if [ -z "$FTARGET" ]; then
         echo "ERROR - found target in Musings, but did not match version"
         exit 1
@@ -170,5 +162,3 @@ if [ -n "$MUSE_WORK_DIR" ]; then
 fi
 
 exit 0
-
-
