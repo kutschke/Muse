@@ -98,8 +98,10 @@ def cppPath(mu2eOpts):
         path = path + [ os.environ['CPPUNIT_DIR']+'/include' ]
     if 'HEPPDT_INC' in os.environ:
         path = path + [ os.environ['HEPPDT_INC' ] ]
+    path = path + [ os.environ['ROOT_INC'] ]
+    if 'OPENBLAS_INC' in os.environ:
+        path = path + [ os.environ['OPENBLAS_INC' ] ]
     path = path + [
-        os.environ['ROOT_INC'],
         os.environ['XERCES_C_INC'],
         os.environ['TBB_INC'] ]
     if 'MU2E_ARTDAQ_CORE_INC' in os.environ: # Old
