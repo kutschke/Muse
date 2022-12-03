@@ -79,7 +79,7 @@ do
                 FLL=$( readlink -f $LINKD/$LL )
                 PKG=$( echo $FLL | awk -F/ '{print $(NF-2)}' )
                 VER=$( echo $FLL | awk -F/ '{print $(NF-1)}' )
-                echo "    linked to $PKG $VER"
+                echo "    linked (deprecated) to $PKG $VER"
             done
         fi
 

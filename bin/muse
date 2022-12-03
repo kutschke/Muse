@@ -20,7 +20,6 @@ museUsage() {
        list      - print information about published Muse builds
        setup     - setup UPS products and path
        build     - run scons code build
-       link      -  ..this functionality has been removed..
        backing   - create a link to a backing build in another area
        tarball   - tar up build for grid or a release
 
@@ -96,12 +95,6 @@ elif [ "$COMMAND" == "backing" ]; then
 
     # this command must be run in the working dir
     $MUSE_DIR/bin/museBacking.sh "$@"
-    $DONE $?
-
-elif [ "$COMMAND" == "link" ]; then
-
-    # this command must be run in the working dir
-    $MUSE_DIR/bin/museLink.sh "$@"
     $DONE $?
 
 elif [ "$COMMAND" == "list" ]; then

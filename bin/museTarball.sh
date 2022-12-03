@@ -136,7 +136,6 @@ fi
 [ -n "$EXTRAEXCLUDE" ] && EXTRAEXCLUDE=" -X $EXTRAEXCLUDE "
 
 # some regex to categorize dirs
-linkReg="^link/*"
 cvmfsReg="^/cvmfs/*"
 
 # create an empty tarball
@@ -248,62 +247,9 @@ else
     BUILDS=$MUSE_BUILD_BASE
 fi
 
-
-#
-# old or new backing build style
-#
-
-HASLINK=""
-[ -d link ] && HASLINK="yes"
-
-HASBACKING=""
-[ -e backing ] && HASBACKING="yes"
-
-#
-# Now begin a giant if statement depending on whether
-# we have link directory or backing links.  For now, default
-# to the old link code if there is neither.
-#
-
-# *************************************** giant link/backing if start
-if [[ "$HASLINK" && ! "$HASBACKING" ]]; then
-
-
-for REPO in $MUSE_REPOS
-do
-    # follow links by default
-    FF=" -h "
-    DD=$( readlink -f $REPO )  # expanded, true dir
-    if [[ "$DD" =~ $cvmfsReg ]]; then
-        # if the link is to cvmfs, then just copy in the link
-        FF=""
-    fi
-
-    # tar repo source
-    [ $MUSE_VERBOSE -gt 0 ] && echo tar $REPO
-    tar $FLAGS $FF $REPO
-
-    # now include the repo built parts
-
-    for BUILD in $BUILDS
-    do
-        [ $MUSE_VERBOSE -gt 0 ] && echo tar $BUILD/$REPO
-        if [ ! -d $BUILD/$REPO ]; then
-            echo "ERROR - $BUILD/$REPO does not exist, was it built?"
-            exit 1
-        fi
-        DD=$( readlink -f $BUILD/$REPO )  # expanded, true dir
-        if [[ "$DD" =~ $cvmfsReg ]]; then
-            # just save the link
-            tar $FLAGS $FF $BUILD/$REPO
-        else
-            tar $FLAGS $FF --exclude=$BUILD/$REPO/tmp $BUILD/$REPO
-        fi
-    done
-done
-
-
-else   # *********************************** giant if for link/backing
+if [ -d link ]; then
+    echo "WARNING - a deprecated link directory exists, but will be ignored"
+fi
 
 LDIR=""
 QMORE="yes"
@@ -344,9 +290,6 @@ do
     fi
 
 done # loop over backing links
-
-
-fi   # ************************************* giant if for link/backing
 
 
 # save .musebuild, there is one for each build
@@ -395,8 +338,5 @@ if [ "$TMPDIR" != "$EXPORTDIR" ]; then
     fi
 fi
 
-#EXPORTDIR=/pnfs/mu2e/resilient/users/$USER/museTarball
-
 
 exit 0
-
