@@ -108,9 +108,12 @@ def cppPath(mu2eOpts):
         path = path + [ os.environ['MU2E_ARTDAQ_CORE_INC' ] ]
     else: # New
         path = path + [ os.environ['ARTDAQ_CORE_MU2E_INC' ] ]
+    if 'PCIE_LINUX_KERNEL_MODULE_INC' in os.environ: # Old
+        path = path + [ os.environ['PCIE_LINUX_KERNEL_MODULE_INC' ] ]
+    else: # New
+        path = path + [ os.environ['MU2E_PCIE_UTILS_INC' ] ]
     path = path + [
         os.environ['ARTDAQ_CORE_INC'],
-        os.environ['PCIE_LINUX_KERNEL_MODULE_INC'],
         os.environ['TRACE_INC'],
         os.environ['GSL_INC'],
         os.environ['POSTGRESQL_INC'],
